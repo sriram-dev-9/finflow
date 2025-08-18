@@ -1,405 +1,264 @@
-import { AppSidebar } from "@/components/app-sidebar"
-import { SiteHeader } from "@/components/site-header"
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@/components/ui/sidebar"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { IconPlus, IconCreditCard, IconWallet, IconPigMoney, IconTrendingUp, IconTrendingDown } from "@tabler/icons-react"
+'use client';
 
-const accounts = [
-  {
-    id: 1,
-    name: "Chase Checking",
-    type: "Checking",
-    balance: 8450.32,
-    change: 245.67,
-    changePercent: 3.0,
-    accountNumber: "****1234",
-    institution: "Chase Bank",
-  },
-  {
-    id: 2,
-    name: "High Yield Savings",
-    type: "Savings",
-    balance: 25680.15,
-    change: 42.18,
-    changePercent: 0.16,
-    accountNumber: "****5678",
-    institution: "Marcus by Goldman Sachs",
-  },
-  {
-    id: 3,
-    name: "Chase Freedom",
-    type: "Credit Card",
-    balance: -1250.45,
-    change: -125.30,
-    changePercent: -11.1,
-    accountNumber: "****9012",
-    institution: "Chase Bank",
-    creditLimit: 15000,
-  },
-  {
-    id: 4,
-    name: "Emergency Fund",
-    type: "Savings",
-    balance: 18500.00,
-    change: 500.00,
-    changePercent: 2.8,
-    accountNumber: "****3456",
-    institution: "Ally Bank",
-  },
-  {
-    id: 5,
-    name: "Investment Account",
-    type: "Investment",
-    balance: 53650.25,
-    change: 1250.75,
-    changePercent: 2.4,
-    accountNumber: "****7890",
-    institution: "Vanguard",
-  },
-]
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { IconPlus, IconCreditCard, IconWallet, IconPigMoney, IconEdit, IconTrash } from '@tabler/icons-react';
+import { toast } from 'sonner';
 
-const getAccountIcon = (type: string) => {
-  switch (type) {
-    case "Checking":
-      return IconWallet
-    case "Savings":
-      return IconPigMoney
-    case "Credit Card":
-      return IconCreditCard
-    case "Investment":
-      return IconTrendingUp
-    default:
-      return IconWallet
-  }
-}
-
-const getAccountTypeColor = (type: string) => {
-  switch (type) {
-    case "Checking":
-      return "default"
-    case "Savings":
-      return "secondary"
-    case "Credit Card":
-      return "destructive"
-    case "Investment":
-      return "default"
-    default:
-      return "default"
-  }
+interface Account {
+  id: string;
+  user_id: string;
+  name: string;
+  type: 'checking' | 'savings' | 'credit' | 'investment';
+  balance: number;
+  created_at: string;
 }
 
 export default function AccountsPage() {
-  const totalAssets = accounts
-    .filter(acc => acc.type !== "Credit Card")
-    .reduce((sum, acc) => sum + acc.balance, 0)
-  
-  const totalLiabilities = accounts
-    .filter(acc => acc.type === "Credit Card")
-    .reduce((sum, acc) => sum + Math.abs(acc.balance), 0)
-  
-  const netWorth = totalAssets - totalLiabilities
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [newAccount, setNewAccount] = useState({
+    name: '',
+    type: 'checking' as Account['type'],
+    balance: 0,
+  });
+
+  useEffect(() => {
+    fetchAccounts();
+  }, []);
+
+  const fetchAccounts = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('accounts')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setAccounts(data || []);
+    } catch (error) {
+      console.error('Error fetching accounts:', error);
+      toast.error('Failed to load accounts');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const { error } = await supabase.from('accounts').insert([newAccount]);
+
+      if (error) throw error;
+
+      toast.success('Account created successfully');
+      setShowCreateForm(false);
+      setNewAccount({
+        name: '',
+        type: 'checking',
+        balance: 0,
+      });
+      fetchAccounts();
+    } catch (error) {
+      console.error('Error creating account:', error);
+      toast.error('Failed to create account');
+    }
+  };
+
+  const getAccountIcon = (type: Account['type']) => {
+    switch (type) {
+      case 'checking':
+        return <IconWallet className="h-5 w-5" />;
+      case 'savings':
+        return <IconPigMoney className="h-5 w-5" />;
+      case 'credit':
+        return <IconCreditCard className="h-5 w-5" />;
+      case 'investment':
+        return <IconPlus className="h-5 w-5" />;
+      default:
+        return <IconWallet className="h-5 w-5" />;
+    }
+  };
+
+  const getAccountColor = (type: Account['type']) => {
+    switch (type) {
+      case 'checking':
+        return 'bg-blue-100 text-blue-800';
+      case 'savings':
+        return 'bg-green-100 text-green-800';
+      case 'credit':
+        return 'bg-orange-100 text-orange-800';
+      case 'investment':
+        return 'bg-purple-100 text-purple-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+        <div className="px-4 lg:px-6">
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold tracking-tight">Accounts</h1>
+            <p className="text-muted-foreground">
+              Manage your financial accounts
+            </p>
+          </div>
+        </div>
+        <div className="px-4 lg:px-6">
+          <div className="text-center">Loading accounts...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
-        } as React.CSSProperties
-      }
-    >
-      <AppSidebar variant="inset" />
-      <SidebarInset>
-        <SiteHeader />
-        <div className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-              <div className="px-4 lg:px-6">
-                <div className="mb-6 flex items-center justify-between">
-                  <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Accounts</h1>
-                    <p className="text-muted-foreground">
-                      Manage all your financial accounts in one place
-                    </p>
+    <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+      <div className="px-4 lg:px-6">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold tracking-tight">Accounts</h1>
+          <p className="text-muted-foreground">
+            Manage your financial accounts
+          </p>
+        </div>
+      </div>
+
+      <div className="px-4 lg:px-6">
+        <div className="mb-4 flex justify-between items-center">
+          <h2 className="text-2xl font-semibold">Your Accounts</h2>
+          <Button onClick={() => setShowCreateForm(!showCreateForm)}>
+            <IconPlus className="h-4 w-4 mr-2" />
+            {showCreateForm ? 'Cancel' : 'Add Account'}
+          </Button>
+        </div>
+
+        {showCreateForm && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Add New Account</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleCreateAccount} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Account Name</Label>
+                    <Input
+                      id="name"
+                      placeholder="e.g., Main Checking"
+                      value={newAccount.name}
+                      onChange={(e) =>
+                        setNewAccount({ ...newAccount, name: e.target.value })
+                      }
+                      required
+                    />
                   </div>
-                  <Button>
-                    <IconPlus className="mr-2 h-4 w-4" />
-                    Add Account
+                  <div className="space-y-2">
+                    <Label htmlFor="type">Account Type</Label>
+                    <Select
+                      value={newAccount.type}
+                      onValueChange={(value: Account['type']) =>
+                        setNewAccount({ ...newAccount, type: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="checking">Checking</SelectItem>
+                        <SelectItem value="savings">Savings</SelectItem>
+                        <SelectItem value="credit">Credit Card</SelectItem>
+                        <SelectItem value="investment">Investment</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="balance">Initial Balance</Label>
+                  <Input
+                    id="balance"
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={newAccount.balance}
+                    onChange={(e) =>
+                      setNewAccount({ ...newAccount, balance: parseFloat(e.target.value) || 0 })
+                    }
+                  />
+                </div>
+                <Button type="submit" className="w-full">
+                  Create Account
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        )}
+
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {accounts.map((account) => (
+            <Card key={account.id} className="p-6">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className={`p-2 rounded-lg ${getAccountColor(account.type)}`}>
+                    {getAccountIcon(account.type)}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">{account.name}</h3>
+                    <Badge variant="secondary" className="text-xs capitalize">
+                      {account.type}
+                    </Badge>
+                  </div>
+                </div>
+                <div className="flex space-x-1">
+                  <Button variant="ghost" size="sm">
+                    <IconEdit className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm">
+                    <IconTrash className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
-              
-              <div className="grid gap-4 px-4 lg:px-6 md:grid-cols-2 lg:grid-cols-4">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Assets</CardTitle>
-                    <IconTrendingUp className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">${totalAssets.toLocaleString()}</div>
-                    <p className="text-xs text-muted-foreground">
-                      Checking, savings & investments
-                    </p>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Liabilities</CardTitle>
-                    <IconTrendingDown className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">${totalLiabilities.toLocaleString()}</div>
-                    <p className="text-xs text-muted-foreground">
-                      Credit cards & loans
-                    </p>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Net Worth</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">${netWorth.toLocaleString()}</div>
-                    <p className="text-xs text-muted-foreground">
-                      Assets minus liabilities
-                    </p>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Accounts</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{accounts.length}</div>
-                    <p className="text-xs text-muted-foreground">
-                      Connected accounts
-                    </p>
-                  </CardContent>
-                </Card>
+              <div className="mt-4">
+                <p className="text-2xl font-bold">{formatCurrency(account.balance)}</p>
+                <p className="text-sm text-muted-foreground">
+                  Current Balance
+                </p>
               </div>
-              
-              <div className="px-4 lg:px-6">
-                <Tabs defaultValue="all" className="space-y-4">
-                  <TabsList>
-                    <TabsTrigger value="all">All Accounts</TabsTrigger>
-                    <TabsTrigger value="checking">Checking</TabsTrigger>
-                    <TabsTrigger value="savings">Savings</TabsTrigger>
-                    <TabsTrigger value="credit">Credit Cards</TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="all" className="space-y-4">
-                    <div className="grid gap-4">
-                      {accounts.map((account) => {
-                        const Icon = getAccountIcon(account.type)
-                        const isPositiveChange = account.change >= 0
-                        
-                        return (
-                          <Card key={account.id}>
-                            <CardContent className="pt-6">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-4">
-                                  <div className="p-2 bg-muted rounded-lg">
-                                    <Icon className="h-6 w-6" />
-                                  </div>
-                                  <div>
-                                    <h3 className="font-medium">{account.name}</h3>
-                                    <div className="flex items-center gap-2">
-                                      <Badge variant={getAccountTypeColor(account.type)}>
-                                        {account.type}
-                                      </Badge>
-                                      <span className="text-sm text-muted-foreground">
-                                        {account.accountNumber}
-                                      </span>
-                                    </div>
-                                    <p className="text-sm text-muted-foreground">
-                                      {account.institution}
-                                    </p>
-                                  </div>
-                                </div>
-                                
-                                <div className="text-right">
-                                  <div className="text-2xl font-bold">
-                                    {account.type === "Credit Card" ? "-" : ""}
-                                    ${Math.abs(account.balance).toLocaleString()}
-                                  </div>
-                                  <div className={`text-sm flex items-center justify-end ${
-                                    isPositiveChange ? "text-green-500" : "text-red-500"
-                                  }`}>
-                                    {isPositiveChange ? (
-                                      <IconTrendingUp className="mr-1 h-3 w-3" />
-                                    ) : (
-                                      <IconTrendingDown className="mr-1 h-3 w-3" />
-                                    )}
-                                    {isPositiveChange ? "+" : ""}${Math.abs(account.change).toFixed(2)} ({account.changePercent}%)
-                                  </div>
-                                  {account.type === "Credit Card" && account.creditLimit && (
-                                    <p className="text-xs text-muted-foreground">
-                                      Limit: ${account.creditLimit.toLocaleString()}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        )
-                      })}
-                    </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="checking" className="space-y-4">
-                    <div className="grid gap-4">
-                      {accounts
-                        .filter(account => account.type === "Checking")
-                        .map((account) => {
-                          const Icon = getAccountIcon(account.type)
-                          const isPositiveChange = account.change >= 0
-                          
-                          return (
-                            <Card key={account.id}>
-                              <CardContent className="pt-6">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center space-x-4">
-                                    <div className="p-2 bg-muted rounded-lg">
-                                      <Icon className="h-6 w-6" />
-                                    </div>
-                                    <div>
-                                      <h3 className="font-medium">{account.name}</h3>
-                                      <p className="text-sm text-muted-foreground">
-                                        {account.institution} • {account.accountNumber}
-                                      </p>
-                                    </div>
-                                  </div>
-                                  <div className="text-right">
-                                    <div className="text-2xl font-bold">
-                                      ${account.balance.toLocaleString()}
-                                    </div>
-                                    <div className={`text-sm flex items-center justify-end ${
-                                      isPositiveChange ? "text-green-500" : "text-red-500"
-                                    }`}>
-                                      {isPositiveChange ? (
-                                        <IconTrendingUp className="mr-1 h-3 w-3" />
-                                      ) : (
-                                        <IconTrendingDown className="mr-1 h-3 w-3" />
-                                      )}
-                                      {isPositiveChange ? "+" : ""}${Math.abs(account.change).toFixed(2)}
-                                    </div>
-                                  </div>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          )
-                        })}
-                    </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="savings" className="space-y-4">
-                    <div className="grid gap-4">
-                      {accounts
-                        .filter(account => account.type === "Savings")
-                        .map((account) => {
-                          const Icon = getAccountIcon(account.type)
-                          const isPositiveChange = account.change >= 0
-                          
-                          return (
-                            <Card key={account.id}>
-                              <CardContent className="pt-6">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center space-x-4">
-                                    <div className="p-2 bg-muted rounded-lg">
-                                      <Icon className="h-6 w-6" />
-                                    </div>
-                                    <div>
-                                      <h3 className="font-medium">{account.name}</h3>
-                                      <p className="text-sm text-muted-foreground">
-                                        {account.institution} • {account.accountNumber}
-                                      </p>
-                                    </div>
-                                  </div>
-                                  <div className="text-right">
-                                    <div className="text-2xl font-bold">
-                                      ${account.balance.toLocaleString()}
-                                    </div>
-                                    <div className={`text-sm flex items-center justify-end ${
-                                      isPositiveChange ? "text-green-500" : "text-red-500"
-                                    }`}>
-                                      {isPositiveChange ? (
-                                        <IconTrendingUp className="mr-1 h-3 w-3" />
-                                      ) : (
-                                        <IconTrendingDown className="mr-1 h-3 w-3" />
-                                      )}
-                                      {isPositiveChange ? "+" : ""}${Math.abs(account.change).toFixed(2)}
-                                    </div>
-                                  </div>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          )
-                        })}
-                    </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="credit" className="space-y-4">
-                    <div className="grid gap-4">
-                      {accounts
-                        .filter(account => account.type === "Credit Card")
-                        .map((account) => {
-                          const Icon = getAccountIcon(account.type)
-                          const utilizationPercent = account.creditLimit 
-                            ? (Math.abs(account.balance) / account.creditLimit) * 100 
-                            : 0
-                          
-                          return (
-                            <Card key={account.id}>
-                              <CardContent className="pt-6">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center space-x-4">
-                                    <div className="p-2 bg-muted rounded-lg">
-                                      <Icon className="h-6 w-6" />
-                                    </div>
-                                    <div>
-                                      <h3 className="font-medium">{account.name}</h3>
-                                      <p className="text-sm text-muted-foreground">
-                                        {account.institution} • {account.accountNumber}
-                                      </p>
-                                      {account.creditLimit && (
-                                        <p className="text-xs text-muted-foreground">
-                                          {utilizationPercent.toFixed(1)}% utilization
-                                        </p>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <div className="text-right">
-                                    <div className="text-2xl font-bold text-red-500">
-                                      ${Math.abs(account.balance).toLocaleString()}
-                                    </div>
-                                    {account.creditLimit && (
-                                      <p className="text-sm text-muted-foreground">
-                                        of ${account.creditLimit.toLocaleString()} limit
-                                      </p>
-                                    )}
-                                  </div>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          )
-                        })}
-                    </div>
-                  </TabsContent>
-                </Tabs>
-              </div>
-            </div>
-          </div>
+            </Card>
+          ))}
         </div>
-      </SidebarInset>
-    </SidebarProvider>
-  )
+
+        {accounts.length === 0 && !showCreateForm && (
+          <Card className="p-12 text-center">
+            <div className="mb-4">
+              <IconWallet className="h-12 w-12 mx-auto text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2">No accounts yet</h3>
+            <p className="text-muted-foreground mb-4">
+              Create your first account to start tracking your finances
+            </p>
+            <Button onClick={() => setShowCreateForm(true)}>
+              <IconPlus className="h-4 w-4 mr-2" />
+              Add Your First Account
+            </Button>
+          </Card>
+        )}
+      </div>
+    </div>
+  );
 }

@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useEffect, useState, useContext, createContext } from "react"
 import {
   Bar, BarChart, CartesianGrid, XAxis, LineChart, Line, AreaChart, Area, PieChart, Pie, Label, RadarChart, PolarAngleAxis, PolarGrid, Radar, RadialBarChart, RadialBar,
 } from "recharts"
@@ -8,6 +9,54 @@ import { TrendingUp } from "lucide-react"
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent, ChartStyle, type ChartConfig } from "@/components/ui/chart"
+
+// Context for analytics data
+interface AnalyticsData {
+  monthlyData: Array<{ date: string; income: number; expenses: number }>
+  categoryData: Array<{ category: string; amount: number }>
+  budgetData: Array<{ segment: string; budget: number; actual: number }>
+  paymentMethodData: Array<{ method: string; count: number; percentage: number }>
+  kpis: {
+    totalIncome: number
+    totalExpenses: number
+    netSavings: number
+    savingsRate: number
+  }
+}
+
+const AnalyticsContext = createContext<AnalyticsData | null>(null)
+
+export function useAnalyticsData() {
+  return useContext(AnalyticsContext)
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                Chart Types                                 */
+/* -------------------------------------------------------------------------- */
+
+interface Transaction {
+  id: string
+  amount: number
+  type: 'income' | 'expense'
+  category: string
+  description: string | null
+  date: string
+  account_id: string
+  created_at: string
+}
+
+interface AnalyticsData {
+  monthlyData: Array<{ date: string; income: number; expenses: number }>
+  categoryData: Array<{ category: string; amount: number }>
+  budgetData: Array<{ segment: string; budget: number; actual: number }>
+  paymentMethodData: Array<{ method: string; count: number; percentage: number }>
+  kpis: {
+    totalIncome: number
+    totalExpenses: number
+    netSavings: number
+    savingsRate: number
+  }
+}
 
 /* -------------------------------------------------------------------------- */
 /*                                Shared Data                                 */
@@ -114,7 +163,12 @@ function formatCurrency(n: number) {
 
 /* ----------------------------- Chart Components --------------------------- */
 
-export function IncomeExpensesLine() {
+export function IncomeExpensesLine({ data }: { data?: Array<{ date: string; income: number; expenses: number }> }) {
+  const contextData = useAnalyticsData()
+  // Use context data first, then provided data, then fallback to static data
+  const chartData = contextData?.monthlyData?.length ? contextData.monthlyData : 
+                   (data && data.length > 0 ? data : incomeExpenseSeries)
+
   return (
     <Card className="py-2">
       <CardHeader className="pb-2">
@@ -123,7 +177,7 @@ export function IncomeExpensesLine() {
       </CardHeader>
       <CardContent className="px-2 sm:px-4">
         <ChartContainer config={incomeExpenseConfig} className="h-[220px] w-full">
-          <LineChart accessibilityLayer data={incomeExpenseSeries} margin={{ left: 8, right: 8 }}>
+          <LineChart accessibilityLayer data={chartData} margin={{ left: 8, right: 8 }}>
             <CartesianGrid vertical={false} />
             <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(v) => new Date(v).toLocaleDateString(undefined,{month:'short'})} />
             <ChartTooltip content={<ChartTooltipContent className="w-[140px]" nameKey="views" />} />
@@ -137,12 +191,14 @@ export function IncomeExpensesLine() {
 }
 
 export function NetSavingsArea() {
-  // derive cumulative savings
-  const areaData = incomeExpenseSeries.map((d, idx) => {
-    const slice = incomeExpenseSeries.slice(0, idx + 1)
+  const contextData = useAnalyticsData()
+  
+  // derive cumulative savings from context data
+  const areaData = contextData?.monthlyData?.map((d, idx) => {
+    const slice = contextData.monthlyData.slice(0, idx + 1)
     const net = slice.reduce((acc, cur) => acc + (cur.income - cur.expenses), 0)
     return { ...d, net }
-  })
+  }) || []
   return (
     <Card className="py-2">
       <CardHeader className="pb-2">
@@ -150,26 +206,51 @@ export function NetSavingsArea() {
         <CardDescription>Income minus expenses</CardDescription>
       </CardHeader>
       <CardContent className="px-2 sm:px-4">
-        <ChartContainer config={netWorthAreaConfig} className="h-[220px] w-full">
-          <AreaChart data={areaData} margin={{ left: 8, right: 8 }}>
-            <defs>
-              <linearGradient id="fillNet" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="var(--color-income)" stopOpacity={0.75} />
-                <stop offset="95%" stopColor="var(--color-income)" stopOpacity={0.05} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid vertical={false} />
-            <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(v)=> new Date(v).toLocaleDateString(undefined,{month:'short'})} />
-            <ChartTooltip content={<ChartTooltipContent className="w-[150px]" />} />
-            <Area dataKey="net" type="natural" stroke="var(--color-income)" fill="url(#fillNet)" />
-          </AreaChart>
-        </ChartContainer>
+        {areaData.length === 0 ? (
+          <div className="flex items-center justify-center h-[220px] text-muted-foreground">
+            No transaction data available
+          </div>
+        ) : (
+          <ChartContainer config={netWorthAreaConfig} className="h-[220px] w-full">
+            <AreaChart data={areaData} margin={{ left: 8, right: 8 }}>
+              <defs>
+                <linearGradient id="fillNet" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="var(--color-income)" stopOpacity={0.75} />
+                  <stop offset="95%" stopColor="var(--color-income)" stopOpacity={0.05} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid vertical={false} />
+              <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(v)=> new Date(v).toLocaleDateString(undefined,{month:'short'})} />
+              <ChartTooltip content={<ChartTooltipContent className="w-[150px]" />} />
+              <Area dataKey="net" type="natural" stroke="var(--color-income)" fill="url(#fillNet)" />
+            </AreaChart>
+          </ChartContainer>
+        )}
       </CardContent>
     </Card>
   )
 }
 
 export function CategoryExpensesBar() {
+  const contextData = useAnalyticsData()
+  const expenseData = contextData?.categoryData?.length ? contextData.categoryData : categoryExpenseData
+  
+  if (expenseData.length === 0) {
+    return (
+      <Card className="py-2">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Expenses by Category</CardTitle>
+          <CardDescription>Current month</CardDescription>
+        </CardHeader>
+        <CardContent className="px-2 sm:px-4">
+          <div className="flex items-center justify-center h-[220px] text-muted-foreground">
+            No expense data available
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+  
   return (
     <Card className="py-2">
       <CardHeader className="pb-2">
@@ -178,7 +259,7 @@ export function CategoryExpensesBar() {
       </CardHeader>
       <CardContent className="px-2 sm:px-4">
         <ChartContainer config={categoryConfig} className="h-[220px] w-full">
-          <BarChart data={categoryExpenseData} margin={{ left: 8, right: 8 }}>
+          <BarChart data={expenseData} margin={{ left: 8, right: 8 }}>
             <CartesianGrid vertical={false} />
             <XAxis dataKey="category" tickLine={false} axisLine={false} tickMargin={6} />
             <ChartTooltip content={<ChartTooltipContent nameKey="category" />} />
@@ -191,10 +272,30 @@ export function CategoryExpensesBar() {
 }
 
 export function CategoryExpensesPie() {
-  const total = categoryExpenseData.reduce((a,c)=>a+c.amount,0)
-  const pieData = categoryExpenseData.map(d => ({ name: d.category, value: d.amount, fill: `var(--color-${d.category.replace(/[^A-Za-z]/g,'')})` }))
+  const contextData = useAnalyticsData()
+  const expenseData = contextData?.categoryData?.length ? contextData.categoryData : categoryExpenseData
+  
+  const total = expenseData.reduce((a,c)=>a+c.amount,0)
+  const pieData = expenseData.map(d => ({ name: d.category, value: d.amount, fill: `var(--color-${d.category.replace(/[^A-Za-z]/g,'')})` }))
   const config: ChartConfig = pieData.reduce((acc,cur)=>{ acc[cur.name as keyof ChartConfig] = { label: cur.name }; return acc }, { value: { label: "Value" }} as any)
   const id = "expense-pie"
+  
+  if (total === 0) {
+    return (
+      <Card className="flex flex-col">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Expense Allocation</CardTitle>
+          <CardDescription>Category share</CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1 pb-0">
+          <div className="flex items-center justify-center h-[260px] text-muted-foreground">
+            No expense data available
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+  
   return (
     <Card className="flex flex-col">
       <ChartStyle id={id} config={config} />
@@ -301,23 +402,57 @@ export function WeeklySavingsStacked() {
 
 /* ------------------------------- KPI Component ---------------------------- */
 
-type Transaction = { id:number; header:string; type:string; target:string }
+type TransactionData = { id:number; header:string; type:string; target:string }
 
-export function AnalyticsKPIs({ data }: { data: Transaction[] }) {
-  // Parse currency strings like "$5,200"
-  const numeric = data.map(t => ({ ...t, value: Number(t.target.replace(/[^0-9.]/g, "")) }))
-  const incomeTotal = numeric.filter(t => ["Income","Savings","Investment"].includes(t.type)).reduce((a,c)=>a+c.value,0)
-  const expenseTotal = numeric.filter(t => !["Income","Savings","Investment"].includes(t.type)).reduce((a,c)=>a+c.value,0)
-  const net = incomeTotal - expenseTotal
-  const savingsRate = incomeTotal ? (net / incomeTotal) * 100 : 0
-  const kpis = [
-    { label: "Total Income", value: formatCurrency(incomeTotal) },
-    { label: "Total Expenses", value: formatCurrency(expenseTotal) },
-    { label: "Net Savings", value: formatCurrency(net) },
-    { label: "Savings Rate", value: savingsRate.toFixed(1) + "%" },
-  ]
+interface AnalyticsData {
+  monthlyData: Array<{ date: string; income: number; expenses: number }>
+  categoryData: Array<{ category: string; amount: number }>
+  budgetData: Array<{ segment: string; budget: number; actual: number }>
+  paymentMethodData: Array<{ method: string; count: number; percentage: number }>
+  kpis: {
+    totalIncome: number
+    totalExpenses: number
+    netSavings: number
+    savingsRate: number
+  }
+}
+
+export function AnalyticsKPIs({ data }: { data: AnalyticsData | TransactionData[] | null }) {
+  let kpis
+  
+  if (!data) {
+    // Fallback demo data
+    kpis = [
+      { label: "Total Income", value: "$5,200" },
+      { label: "Total Expenses", value: "$4,100" },
+      { label: "Net Savings", value: "$1,100" },
+      { label: "Savings Rate", value: "21.2%" },
+    ]
+  } else if (Array.isArray(data)) {
+    // Legacy format (TransactionData[])
+    const numeric = data.map(t => ({ ...t, value: Number(t.target.replace(/[^0-9.]/g, "")) }))
+    const incomeTotal = numeric.filter(t => ["Income","Savings","Investment"].includes(t.type)).reduce((a,c)=>a+c.value,0)
+    const expenseTotal = numeric.filter(t => !["Income","Savings","Investment"].includes(t.type)).reduce((a,c)=>a+c.value,0)
+    const net = incomeTotal - expenseTotal
+    const savingsRate = incomeTotal ? (net / incomeTotal) * 100 : 0
+    kpis = [
+      { label: "Total Income", value: formatCurrency(incomeTotal) },
+      { label: "Total Expenses", value: formatCurrency(expenseTotal) },
+      { label: "Net Savings", value: formatCurrency(net) },
+      { label: "Savings Rate", value: savingsRate.toFixed(1) + "%" },
+    ]
+  } else {
+    // New analytics format
+    kpis = [
+      { label: "Total Income", value: formatCurrency(data.kpis.totalIncome) },
+      { label: "Total Expenses", value: formatCurrency(data.kpis.totalExpenses) },
+      { label: "Net Savings", value: formatCurrency(data.kpis.netSavings) },
+      { label: "Savings Rate", value: data.kpis.savingsRate.toFixed(1) + "%" },
+    ]
+  }
+
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 mb-6">
       {kpis.map(k => (
         <Card key={k.label} className="py-2">
           <CardHeader className="pb-1">

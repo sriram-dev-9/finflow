@@ -1,15 +1,15 @@
-import { AppSidebar } from "@/components/app-sidebar"
-import { SiteHeader } from "@/components/site-header"
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@/components/ui/sidebar"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
+'use client';
+
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { IconTarget, IconPlus, IconEdit, IconTrash, IconCalendar, IconTrendingUp } from '@tabler/icons-react';
+import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { IconPlus, IconTarget, IconCalendar, IconTrendingUp } from "@tabler/icons-react"
 
 const goals = [
   {
@@ -85,34 +85,23 @@ export default function GoalsPage() {
   const overallProgress = (totalCurrent / totalTarget) * 100
 
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
-        } as React.CSSProperties
-      }
-    >
-      <AppSidebar variant="inset" />
-      <SidebarInset>
-        <SiteHeader />
-        <div className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-              <div className="px-4 lg:px-6">
-                <div className="mb-6 flex items-center justify-between">
-                  <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Financial Goals</h1>
-                    <p className="text-muted-foreground">
-                      Track progress towards your financial objectives
-                    </p>
-                  </div>
-                  <Button>
-                    <IconPlus className="mr-2 h-4 w-4" />
-                    Add Goal
-                  </Button>
-                </div>
+    <div className="flex flex-1 flex-col">
+      <div className="@container/main flex flex-1 flex-col gap-2">
+        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+          <div className="px-4 lg:px-6">
+            <div className="mb-6 flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold tracking-tight">Financial Goals</h1>
+                <p className="text-muted-foreground">
+                  Track progress towards your financial objectives
+                </p>
               </div>
+              <Button>
+                <IconPlus className="mr-2 h-4 w-4" />
+                Add Goal
+              </Button>
+            </div>
+          </div>
               
               <div className="grid gap-4 px-4 lg:px-6 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
@@ -302,7 +291,5 @@ export default function GoalsPage() {
             </div>
           </div>
         </div>
-      </SidebarInset>
-    </SidebarProvider>
   )
 }

@@ -29,85 +29,11 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@/components/ui/toggle-group"
+import { Skeleton } from "@/components/ui/skeleton"
+import { getChartData } from "@/lib/database"
+import { ChartDataPoint } from "@/lib/types"
 
 export const description = "An interactive line chart"
-
-const chartData = [
-  { date: "2024-01-01", income: 5200, expenses: 3800 },
-  { date: "2024-01-02", income: 5200, expenses: 3850 },
-  { date: "2024-01-03", income: 5200, expenses: 3900 },
-  { date: "2024-01-04", income: 5200, expenses: 3750 },
-  { date: "2024-01-05", income: 5200, expenses: 3800 },
-  { date: "2024-01-06", income: 5200, expenses: 3820 },
-  { date: "2024-01-07", income: 5200, expenses: 3780 },
-  { date: "2024-01-08", income: 5200, expenses: 3850 },
-  { date: "2024-01-09", income: 5200, expenses: 3900 },
-  { date: "2024-01-10", income: 5200, expenses: 3750 },
-  { date: "2024-01-11", income: 5200, expenses: 3800 },
-  { date: "2024-01-12", income: 5200, expenses: 3820 },
-  { date: "2024-01-13", income: 5200, expenses: 3780 },
-  { date: "2024-01-14", income: 5200, expenses: 3850 },
-  { date: "2024-01-15", income: 5200, expenses: 3900 },
-  { date: "2024-01-16", income: 5200, expenses: 3750 },
-  { date: "2024-01-17", income: 5200, expenses: 3850 },
-  { date: "2024-01-18", income: 5200, expenses: 4100 },
-  { date: "2024-01-19", income: 5200, expenses: 3650 },
-  { date: "2024-01-20", income: 5200, expenses: 3750 },
-  { date: "2024-01-21", income: 5200, expenses: 3800 },
-  { date: "2024-01-22", income: 5200, expenses: 3700 },
-  { date: "2024-01-23", income: 5200, expenses: 3950 },
-  { date: "2024-01-24", income: 5200, expenses: 4050 },
-  { date: "2024-01-25", income: 5200, expenses: 3850 },
-  { date: "2024-01-26", income: 5200, expenses: 3650 },
-  { date: "2024-01-27", income: 5200, expenses: 4150 },
-  { date: "2024-01-28", income: 5200, expenses: 3750 },
-  { date: "2024-01-29", income: 5200, expenses: 3900 },
-  { date: "2024-01-30", income: 5200, expenses: 4200 },
-  { date: "2024-02-01", income: 5200, expenses: 3800 },
-  { date: "2024-02-02", income: 5200, expenses: 4000 },
-  { date: "2024-02-03", income: 5200, expenses: 3700 },
-  { date: "2024-02-04", income: 5200, expenses: 4100 },
-  { date: "2024-02-05", income: 5200, expenses: 4200 },
-  { date: "2024-02-06", income: 5200, expenses: 4300 },
-  { date: "2024-02-07", income: 5200, expenses: 3950 },
-  { date: "2024-02-08", income: 5200, expenses: 3800 },
-  { date: "2024-02-09", income: 5200, expenses: 3750 },
-  { date: "2024-02-10", income: 5200, expenses: 4000 },
-  { date: "2024-02-11", income: 5200, expenses: 3900 },
-  { date: "2024-02-12", income: 5200, expenses: 3850 },
-  { date: "2024-02-13", income: 5200, expenses: 3700 },
-  { date: "2024-02-14", income: 5200, expenses: 4250 },
-  { date: "2024-02-15", income: 5200, expenses: 4100 },
-  { date: "2024-02-16", income: 5200, expenses: 4000 },
-  { date: "2024-02-17", income: 5200, expenses: 4150 },
-  { date: "2024-02-18", income: 5200, expenses: 3950 },
-  { date: "2024-02-19", income: 5200, expenses: 3750 },
-  { date: "2024-02-20", income: 5200, expenses: 3850 },
-  { date: "2024-02-21", income: 5200, expenses: 3650 },
-  { date: "2024-02-22", income: 5200, expenses: 3600 },
-  { date: "2024-02-23", income: 5200, expenses: 3950 },
-  { date: "2024-02-24", income: 5200, expenses: 3850 },
-  { date: "2024-02-25", income: 5200, expenses: 3900 },
-  { date: "2024-02-26", income: 5200, expenses: 3700 },
-  { date: "2024-02-27", income: 5200, expenses: 4200 },
-  { date: "2024-02-28", income: 5200, expenses: 3800 },
-  { date: "2024-03-01", income: 5200, expenses: 3650 },
-  { date: "2024-03-02", income: 5200, expenses: 3950 },
-  { date: "2024-03-03", income: 5200, expenses: 3850 },
-  { date: "2024-03-04", income: 5200, expenses: 3800 },
-  { date: "2024-03-05", income: 5200, expenses: 4100 },
-  { date: "2024-03-06", income: 5200, expenses: 3700 },
-  { date: "2024-03-06", income: 5200, expenses: 3700 },
-  { date: "2024-03-07", income: 5200, expenses: 3950 },
-  { date: "2024-03-08", income: 5200, expenses: 4000 },
-  { date: "2024-03-09", income: 5200, expenses: 3850 },
-  { date: "2024-03-10", income: 5200, expenses: 4200 },
-  { date: "2024-03-11", income: 5200, expenses: 3750 },
-  { date: "2024-03-12", income: 5200, expenses: 3650 },
-  { date: "2024-03-13", income: 5200, expenses: 4150 },
-  { date: "2024-03-14", income: 5200, expenses: 3600 },
-  { date: "2024-03-15", income: 5200, expenses: 4100 },
-]
 
 const chartConfig = {
   cash_flow: {
@@ -126,6 +52,9 @@ const chartConfig = {
 export function ChartLineInteractive() {
   const isMobile = useIsMobile()
   const [timeRange, setTimeRange] = React.useState("90d")
+  const [chartData, setChartData] = React.useState<ChartDataPoint[]>([])
+  const [loading, setLoading] = React.useState(true)
+  const [error, setError] = React.useState<string | null>(null)
 
   React.useEffect(() => {
     if (isMobile) {
@@ -133,19 +62,61 @@ export function ChartLineInteractive() {
     }
   }, [isMobile])
 
-  const filteredData = chartData.filter((item) => {
-    const date = new Date(item.date)
-    const referenceDate = new Date("2024-03-15") // Use the end of our data range
-    let daysToSubtract = 90
-    if (timeRange === "30d") {
-      daysToSubtract = 30
-    } else if (timeRange === "7d") {
-      daysToSubtract = 7
+  React.useEffect(() => {
+    async function fetchChartData() {
+      try {
+        setLoading(true)
+        setError(null)
+        
+        let days = 90
+        if (timeRange === "30d") {
+          days = 30
+        } else if (timeRange === "7d") {
+          days = 7
+        }
+        
+        const data = await getChartData(days)
+        setChartData(data)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch chart data')
+        console.error('Error fetching chart data:', err)
+      } finally {
+        setLoading(false)
+      }
     }
-    const startDate = new Date(referenceDate)
-    startDate.setDate(startDate.getDate() - daysToSubtract)
-    return date >= startDate
-  })
+
+    fetchChartData()
+  }, [timeRange])
+
+  if (loading) {
+    return (
+      <Card className="@container/card">
+        <CardHeader>
+          <CardTitle>Income vs Expenses</CardTitle>
+          <CardDescription>Loading chart data...</CardDescription>
+        </CardHeader>
+        <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
+          <Skeleton className="aspect-auto h-[250px] w-full" />
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (error) {
+    return (
+      <Card className="@container/card">
+        <CardHeader>
+          <CardTitle>Income vs Expenses</CardTitle>
+          <CardDescription className="text-red-600">{error}</CardDescription>
+        </CardHeader>
+        <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
+          <div className="aspect-auto h-[250px] w-full flex items-center justify-center text-muted-foreground">
+            Unable to load chart data
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
     <Card className="@container/card">
@@ -153,9 +124,9 @@ export function ChartLineInteractive() {
         <CardTitle>Income vs Expenses</CardTitle>
         <CardDescription>
           <span className="hidden @[540px]/card:block">
-            Your cash flow for the last 3 months
+            Your cash flow for the selected period
           </span>
-          <span className="@[540px]/card:hidden">Last 3 months cash flow</span>
+          <span className="@[540px]/card:hidden">Cash flow overview</span>
         </CardDescription>
         <CardAction>
           <ToggleGroup
@@ -197,7 +168,7 @@ export function ChartLineInteractive() {
           className="aspect-auto h-[250px] w-full"
         >
           <LineChart 
-            data={filteredData}
+            data={chartData}
             margin={{
               left: 12,
               right: 12,
@@ -209,7 +180,6 @@ export function ChartLineInteractive() {
               tickLine={false}
               axisLine={false}
               tickMargin={8}
-              minTickGap={32}
               tickFormatter={(value) => {
                 const date = new Date(value)
                 return date.toLocaleDateString("en-US", {
@@ -219,30 +189,31 @@ export function ChartLineInteractive() {
               }}
             />
             <ChartTooltip
-              content={
-                <ChartTooltipContent
-                  className="w-[150px]"
-                  labelFormatter={(value) => {
-                    return new Date(value).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })
-                  }}
-                />
-              }
-            />
-            <Line
-              dataKey="expenses"
-              type="monotone"
-              stroke="var(--color-expenses)"
-              strokeWidth={2}
-              dot={false}
+              cursor={false}
+              content={<ChartTooltipContent hideLabel />}
+              formatter={(value, name) => (
+                <div className="flex min-w-[120px] items-center text-xs text-muted-foreground">
+                  {chartConfig[name as keyof typeof chartConfig]?.label || name}
+                  <div className="ml-auto flex items-baseline gap-0.5 font-mono font-medium tabular-nums text-foreground">
+                    $
+                    <span className="font-normal text-muted-foreground">
+                      {Number(value).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              )}
             />
             <Line
               dataKey="income"
               type="monotone"
               stroke="var(--color-income)"
+              strokeWidth={2}
+              dot={false}
+            />
+            <Line
+              dataKey="expenses"
+              type="monotone"
+              stroke="var(--color-expenses)"
               strokeWidth={2}
               dot={false}
             />

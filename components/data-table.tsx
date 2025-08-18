@@ -7,29 +7,30 @@ import {
   IconChevronsLeft,
   IconChevronsRight,
   IconDotsVertical,
-  IconTrendingUp,
+  IconPlus,
 } from "@tabler/icons-react"
 import {
   ColumnDef,
   flexRender,
   getCoreRowModel,
   getPaginationRowModel,
-  Row,
+  getSortedRowModel,
+  SortingState,
   useReactTable,
 } from "@tanstack/react-table"
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
 import { toast } from "sonner"
-import { z } from "zod"
 
 import { useIsMobile } from "@/hooks/use-mobile"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
-  ChartConfig,
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart"
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import {
   Drawer,
   DrawerClose,
@@ -38,7 +39,6 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
-  DrawerTrigger,
 } from "@/components/ui/drawer"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
@@ -50,7 +50,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Table,
   TableBody,
@@ -59,113 +59,424 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-// Removed advanced Tabs/Views controls
+import { getTransactions, createTransaction, updateTransaction, deleteTransaction } from "@/lib/database"
+import { Transaction } from "@/lib/types"
 
-export const schema = z.object({
-  id: z.number(),
-  header: z.string(),
-  type: z.string(),
-  status: z.string(), // kept for compatibility with existing JSON but no longer shown
-  target: z.string(), // amount
-  limit: z.string(), // frequency (hidden)
-  reviewer: z.string(), // method
-})
-
-// Drag & selection features removed for simplified finance table.
-
-// Helper to derive Debit/Credit from category
-function getDebitCredit(type: string) {
-  const creditCategories = ["Income", "Savings", "Investment"]
-  return creditCategories.includes(type) ? "Credit" : "Debit"
+function formatCurrency(amount: number) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(amount)
 }
 
-const columns: ColumnDef<z.infer<typeof schema>>[] = [
+function formatDate(dateString: string) {
+  return new Date(dateString).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  })
+}
+
+const columns: ColumnDef<Transaction>[] = [
   {
-    accessorKey: "header",
-    header: "Transaction",
-    cell: ({ row }) => <TableCellViewer item={row.original} />,
-  },
-  {
-    accessorKey: "type",
-    header: "Category",
+    accessorKey: "description",
+    header: "Description",
     cell: ({ row }) => (
-      <div className="w-32">
-        <Badge variant="outline" className="text-muted-foreground px-1.5">
-          {row.original.type}
-        </Badge>
+      <div className="font-medium max-w-[200px] truncate">
+        {row.original.description || "No description"}
       </div>
     ),
   },
   {
-    id: "debitCredit",
-    header: "Debit/Credit",
+    accessorKey: "category",
+    header: "Category",
     cell: ({ row }) => (
-      <Badge
-        variant="outline"
-        className="px-1.5"
-        data-type={getDebitCredit(row.original.type)}
-      >
-        {getDebitCredit(row.original.type)}
+      <Badge variant="outline" className="text-muted-foreground px-1.5">
+        {row.original.category}
       </Badge>
     ),
   },
   {
-    accessorKey: "target",
-    header: () => <div className="w-full text-right">Amount</div>,
+    accessorKey: "type",
+    header: "Type",
     cell: ({ row }) => (
-      <div className="text-right tabular-nums font-medium">
-        {row.original.target}
+      <Badge
+        variant="outline"
+        className={`px-1.5 ${
+          row.original.type === 'income' 
+            ? 'text-green-600 border-green-200' 
+            : 'text-red-600 border-red-200'
+        }`}
+      >
+        {row.original.type === 'income' ? 'Income' : 'Expense'}
+      </Badge>
+    ),
+  },
+  {
+    accessorKey: "amount",
+    header: () => <div className="text-right">Amount</div>,
+    cell: ({ row }) => (
+      <div className={`text-right tabular-nums font-medium ${
+        row.original.type === 'income' ? 'text-green-600' : 'text-red-600'
+      }`}>
+        {row.original.type === 'income' ? '+' : '-'}{formatCurrency(Number(row.original.amount))}
       </div>
     ),
   },
   {
-    accessorKey: "reviewer",
-    header: "Method",
-    cell: ({ row }) => row.original.reviewer,
+    accessorKey: "date",
+    header: "Date",
+    cell: ({ row }) => (
+      <div className="text-muted-foreground">
+        {formatDate(row.original.date)}
+      </div>
+    ),
   },
   {
     id: "actions",
-    cell: () => (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
-            size="icon"
-          >
-            <IconDotsVertical />
-            <span className="sr-only">Open menu</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-32">
-          <DropdownMenuItem>Edit</DropdownMenuItem>
-          <DropdownMenuItem>Duplicate</DropdownMenuItem>
-          <DropdownMenuItem>Favorite</DropdownMenuItem>
-          <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive">Delete</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    ),
+    cell: ({ row }) => <TransactionActions transaction={row.original} />,
   },
 ]
 
-// Draggable row removed
+function TransactionActions({ transaction }: { transaction: Transaction }) {
+  const [isEditing, setIsEditing] = React.useState(false)
+  const [isDeleting, setIsDeleting] = React.useState(false)
 
-export function DataTable({ data: initialData }: { data: z.infer<typeof schema>[] }) {
-  // Static data; no reordering or selection now.
+  const handleDelete = async () => {
+    try {
+      await deleteTransaction(transaction.id)
+      toast.success("Transaction deleted successfully")
+      window.location.reload() // Simple refresh for now
+    } catch (error) {
+      toast.error("Failed to delete transaction")
+      console.error(error)
+    }
+    setIsDeleting(false)
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
+          size="icon"
+        >
+          <IconDotsVertical />
+          <span className="sr-only">Open menu</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-32">
+        <DropdownMenuItem onClick={() => setIsEditing(true)}>
+          Edit
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem 
+          className="text-destructive"
+          onClick={() => setIsDeleting(true)}
+        >
+          Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+      
+      <TransactionForm
+        isOpen={isEditing}
+        onClose={() => setIsEditing(false)}
+        transaction={transaction}
+        mode="edit"
+      />
+      
+      <DeleteConfirmation
+        isOpen={isDeleting}
+        onClose={() => setIsDeleting(false)}
+        onConfirm={handleDelete}
+        transactionDescription={transaction.description || "this transaction"}
+      />
+    </DropdownMenu>
+  )
+}
+
+function DeleteConfirmation({ 
+  isOpen, 
+  onClose, 
+  onConfirm, 
+  transactionDescription 
+}: {
+  isOpen: boolean
+  onClose: () => void
+  onConfirm: () => void
+  transactionDescription: string
+}) {
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Delete Transaction</DialogTitle>
+          <DialogDescription>
+            Are you sure you want to delete "{transactionDescription}"? This action cannot be undone.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button variant="destructive" onClick={onConfirm}>Delete</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function TransactionForm({
+  isOpen,
+  onClose,
+  transaction,
+  mode = 'create'
+}: {
+  isOpen: boolean
+  onClose: () => void
+  transaction?: Transaction
+  mode?: 'create' | 'edit'
+}) {
+  const isMobile = useIsMobile()
+  const [loading, setLoading] = React.useState(false)
+  const [formData, setFormData] = React.useState({
+    description: transaction?.description || '',
+    amount: transaction?.amount.toString() || '',
+    type: transaction?.type || 'expense' as 'income' | 'expense',
+    category: transaction?.category || '',
+    date: transaction?.date || new Date().toISOString().split('T')[0],
+  })
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+
+    try {
+      const transactionData = {
+        description: formData.description,
+        amount: Number(formData.amount),
+        type: formData.type,
+        category: formData.category,
+        date: formData.date,
+      }
+
+      if (mode === 'edit' && transaction) {
+        await updateTransaction(transaction.id, transactionData)
+        toast.success("Transaction updated successfully")
+      } else {
+        await createTransaction(transactionData)
+        toast.success("Transaction created successfully")
+      }
+
+      onClose()
+      window.location.reload() // Simple refresh for now
+    } catch (error) {
+      toast.error(`Failed to ${mode} transaction`)
+      console.error(error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const content = (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3">
+        <Label htmlFor="description">Description</Label>
+        <Input
+          id="description"
+          value={formData.description}
+          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+          placeholder="Enter transaction description"
+          required
+        />
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4">
+        <div className="flex flex-col gap-3">
+          <Label htmlFor="amount">Amount</Label>
+          <Input
+            id="amount"
+            type="number"
+            step="0.01"
+            min="0"
+            value={formData.amount}
+            onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
+            placeholder="0.00"
+            required
+          />
+        </div>
+        <div className="flex flex-col gap-3">
+          <Label htmlFor="type">Type</Label>
+          <Select
+            value={formData.type}
+            onValueChange={(value: 'income' | 'expense') => 
+              setFormData(prev => ({ ...prev, type: value }))
+            }
+          >
+            <SelectTrigger id="type">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="income">Income</SelectItem>
+              <SelectItem value="expense">Expense</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4">
+        <div className="flex flex-col gap-3">
+          <Label htmlFor="category">Category</Label>
+          <Input
+            id="category"
+            value={formData.category}
+            onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+            placeholder="e.g., Food, Rent, Salary"
+            required
+          />
+        </div>
+        <div className="flex flex-col gap-3">
+          <Label htmlFor="date">Date</Label>
+          <Input
+            id="date"
+            type="date"
+            value={formData.date}
+            onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+            required
+          />
+        </div>
+      </div>
+    </form>
+  )
+
+  if (isMobile) {
+    return (
+      <Drawer open={isOpen} onOpenChange={onClose}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>{mode === 'edit' ? 'Edit' : 'Add'} Transaction</DrawerTitle>
+            <DrawerDescription>
+              {mode === 'edit' ? 'Update' : 'Create'} your transaction details below.
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="px-4">
+            {content}
+          </div>
+          <DrawerFooter>
+            <Button type="submit" disabled={loading} onClick={handleSubmit}>
+              {loading ? 'Saving...' : mode === 'edit' ? 'Update' : 'Create'}
+            </Button>
+            <DrawerClose asChild>
+              <Button variant="outline" disabled={loading}>Cancel</Button>
+            </DrawerClose>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    )
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{mode === 'edit' ? 'Edit' : 'Add'} Transaction</DialogTitle>
+          <DialogDescription>
+            {mode === 'edit' ? 'Update' : 'Create'} your transaction details below.
+          </DialogDescription>
+        </DialogHeader>
+        {content}
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={loading}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={loading} onClick={handleSubmit}>
+            {loading ? 'Saving...' : mode === 'edit' ? 'Update' : 'Create'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+export function DataTable() {
+  const [transactions, setTransactions] = React.useState<Transaction[]>([])
+  const [loading, setLoading] = React.useState(true)
+  const [error, setError] = React.useState<string | null>(null)
+  const [sorting, setSorting] = React.useState<SortingState>([])
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
+  const [showAddForm, setShowAddForm] = React.useState(false)
+
+  React.useEffect(() => {
+    async function fetchTransactions() {
+      try {
+        setLoading(true)
+        const data = await getTransactions(100) // Get latest 100 transactions
+        setTransactions(data)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch transactions')
+        console.error('Error fetching transactions:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchTransactions()
+  }, [])
 
   const table = useReactTable({
-    data: initialData,
+    data: transactions,
     columns,
-    state: { pagination },
+    state: { 
+      sorting,
+      pagination 
+    },
+    onSortingChange: setSorting,
     onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
   })
+
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-4 px-4 lg:px-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+        <div className="overflow-hidden rounded-lg border">
+          <div className="p-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-12 w-full mb-2" />
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col gap-4 px-4 lg:px-6">
+        <div className="overflow-hidden rounded-lg border">
+          <div className="p-8 text-center">
+            <div className="text-red-600 font-medium">Error loading transactions</div>
+            <div className="text-muted-foreground mt-2">{error}</div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-4 px-4 lg:px-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-semibold">Recent Transactions</h2>
+        <Button onClick={() => setShowAddForm(true)}>
+          <IconPlus className="size-4 mr-2" />
+          Add Transaction
+        </Button>
+      </div>
+      
       <div className="overflow-hidden rounded-lg border">
         <Table>
           <TableHeader className="bg-muted sticky top-0 z-10">
@@ -195,13 +506,14 @@ export function DataTable({ data: initialData }: { data: z.infer<typeof schema>[
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-24 text-center">
-                  No results.
+                  No transactions found. Add your first transaction to get started!
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </div>
+      
       <div className="flex items-center justify-between">
         <div className="hidden items-center gap-2 lg:flex">
           <Label htmlFor="rows-per-page" className="text-sm font-medium">
@@ -268,185 +580,12 @@ export function DataTable({ data: initialData }: { data: z.infer<typeof schema>[
           </Button>
         </div>
       </div>
+
+      <TransactionForm
+        isOpen={showAddForm}
+        onClose={() => setShowAddForm(false)}
+        mode="create"
+      />
     </div>
-  )
-}
-
-const chartData = [
-  { month: "January", desktop: 186, mobile: 80 },
-  { month: "February", desktop: 305, mobile: 200 },
-  { month: "March", desktop: 237, mobile: 120 },
-  { month: "April", desktop: 73, mobile: 190 },
-  { month: "May", desktop: 209, mobile: 130 },
-  { month: "June", desktop: 214, mobile: 140 },
-]
-
-const chartConfig = {
-  desktop: {
-    label: "Desktop",
-    color: "var(--primary)",
-  },
-  mobile: {
-    label: "Mobile",
-    color: "var(--primary)",
-  },
-} satisfies ChartConfig
-
-function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
-  const isMobile = useIsMobile()
-
-  return (
-    <Drawer direction={isMobile ? "bottom" : "right"}>
-      <DrawerTrigger asChild>
-        <Button variant="link" className="text-foreground w-fit px-0 text-left">
-          {item.header}
-        </Button>
-      </DrawerTrigger>
-      <DrawerContent>
-        <DrawerHeader className="gap-1">
-          <DrawerTitle>{item.header}</DrawerTitle>
-          <DrawerDescription>
-            Showing total visitors for the last 6 months
-          </DrawerDescription>
-        </DrawerHeader>
-        <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
-          {!isMobile && (
-            <>
-              <ChartContainer config={chartConfig}>
-                <AreaChart
-                  accessibilityLayer
-                  data={chartData}
-                  margin={{
-                    left: 0,
-                    right: 10,
-                  }}
-                >
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="month"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    tickFormatter={(value) => value.slice(0, 3)}
-                    hide
-                  />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent indicator="dot" />}
-                  />
-                  <Area
-                    dataKey="mobile"
-                    type="natural"
-                    fill="var(--color-mobile)"
-                    fillOpacity={0.6}
-                    stroke="var(--color-mobile)"
-                    stackId="a"
-                  />
-                  <Area
-                    dataKey="desktop"
-                    type="natural"
-                    fill="var(--color-desktop)"
-                    fillOpacity={0.4}
-                    stroke="var(--color-desktop)"
-                    stackId="a"
-                  />
-                </AreaChart>
-              </ChartContainer>
-              <Separator />
-              <div className="grid gap-2">
-                <div className="flex gap-2 leading-none font-medium">
-                  Trending up by 5.2% this month{" "}
-                  <IconTrendingUp className="size-4" />
-                </div>
-                <div className="text-muted-foreground">
-                  Showing total visitors for the last 6 months. This is just
-                  some random text to test the layout. It spans multiple lines
-                  and should wrap around.
-                </div>
-              </div>
-              <Separator />
-            </>
-          )}
-          <form className="flex flex-col gap-4">
-            <div className="flex flex-col gap-3">
-              <Label htmlFor="header">Header</Label>
-              <Input id="header" defaultValue={item.header} />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-3">
-                <Label htmlFor="type">Type</Label>
-                <Select defaultValue={item.type}>
-                  <SelectTrigger id="type" className="w-full">
-                    <SelectValue placeholder="Select a type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Table of Contents">
-                      Table of Contents
-                    </SelectItem>
-                    <SelectItem value="Executive Summary">
-                      Executive Summary
-                    </SelectItem>
-                    <SelectItem value="Technical Approach">
-                      Technical Approach
-                    </SelectItem>
-                    <SelectItem value="Design">Design</SelectItem>
-                    <SelectItem value="Capabilities">Capabilities</SelectItem>
-                    <SelectItem value="Focus Documents">
-                      Focus Documents
-                    </SelectItem>
-                    <SelectItem value="Narrative">Narrative</SelectItem>
-                    <SelectItem value="Cover Page">Cover Page</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex flex-col gap-3">
-                <Label htmlFor="status">Status</Label>
-                <Select defaultValue={item.status}>
-                  <SelectTrigger id="status" className="w-full">
-                    <SelectValue placeholder="Select a status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Done">Done</SelectItem>
-                    <SelectItem value="In Progress">In Progress</SelectItem>
-                    <SelectItem value="Not Started">Not Started</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-3">
-                <Label htmlFor="target">Target</Label>
-                <Input id="target" defaultValue={item.target} />
-              </div>
-              <div className="flex flex-col gap-3">
-                <Label htmlFor="limit">Limit</Label>
-                <Input id="limit" defaultValue={item.limit} />
-              </div>
-            </div>
-            <div className="flex flex-col gap-3">
-              <Label htmlFor="reviewer">Reviewer</Label>
-              <Select defaultValue={item.reviewer}>
-                <SelectTrigger id="reviewer" className="w-full">
-                  <SelectValue placeholder="Select a reviewer" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Eddie Lake">Eddie Lake</SelectItem>
-                  <SelectItem value="Jamik Tashpulatov">
-                    Jamik Tashpulatov
-                  </SelectItem>
-                  <SelectItem value="Emily Whalen">Emily Whalen</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </form>
-        </div>
-        <DrawerFooter>
-          <Button>Submit</Button>
-          <DrawerClose asChild>
-            <Button variant="outline">Done</Button>
-          </DrawerClose>
-        </DrawerFooter>
-      </DrawerContent>
-    </Drawer>
   )
 }
