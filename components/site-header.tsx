@@ -1,10 +1,11 @@
 "use client"
 
 import { usePathname } from "next/navigation"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { IconBell, IconSettings } from "@tabler/icons-react"
+import { IconBell, IconSettings, IconChartBar } from "@tabler/icons-react"
 
 const getPageTitle = (pathname: string) => {
   switch (pathname) {
@@ -45,11 +46,18 @@ export function SiteHeader() {
         />
         <h1 className="text-base font-medium">{pageTitle}</h1>
         <div className="ml-auto flex items-center gap-2">
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/analytics">
+              <IconChartBar className="h-4 w-4" />
+            </Link>
+          </Button>
           <Button variant="ghost" size="sm">
             <IconBell className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="sm">
-            <IconSettings className="h-4 w-4" />
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/settings">
+              <IconSettings className="h-4 w-4" />
+            </Link>
           </Button>
         </div>
       </div>

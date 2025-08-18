@@ -11,7 +11,8 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { IconUser, IconBell, IconShield, IconCreditCard } from "@tabler/icons-react"
+import { IconUser, IconBell, IconShield, IconCreditCard, IconPalette } from "@tabler/icons-react"
+import { ThemeSettings } from "@/components/ui/settings/theme-settings"
 
 export default function SettingsPage() {
   return (
@@ -42,6 +43,7 @@ export default function SettingsPage() {
                 <Tabs defaultValue="profile" className="space-y-4">
                   <TabsList>
                     <TabsTrigger value="profile">Profile</TabsTrigger>
+                    <TabsTrigger value="theme">Theme</TabsTrigger>
                     <TabsTrigger value="notifications">Notifications</TabsTrigger>
                     <TabsTrigger value="security">Security</TabsTrigger>
                     <TabsTrigger value="billing">Billing</TabsTrigger>
@@ -94,6 +96,10 @@ export default function SettingsPage() {
                         <Button>Save Changes</Button>
                       </CardContent>
                     </Card>
+                  </TabsContent>
+                  
+                  <TabsContent value="theme" className="space-y-4">
+                    <ThemeSettings />
                   </TabsContent>
                   
                   <TabsContent value="notifications" className="space-y-4">
