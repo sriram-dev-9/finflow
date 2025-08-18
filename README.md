@@ -1,36 +1,168 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# FinFlow - AI-Powered Personal Finance Dashboard
+
+FinFlow is a comprehensive personal finance management application built with Next.js, featuring AI-powered insights and modern UI components.
+
+## Features
+
+### 🏠 **Dashboard**
+- Overview of financial health with key metrics
+- Interactive charts showing income vs expenses
+- Net worth tracking with trend indicators
+- Monthly savings rate analysis
+
+### 💳 **Transactions**
+- Complete transaction history with filtering
+- Categorized spending breakdown
+- Drag-and-drop transaction management
+- Editable transaction details
+
+### 📊 **Analytics**
+- Deep financial insights and trends
+- Expense category breakdowns with pie charts
+- Monthly financial trend analysis
+- Interactive data visualization
+
+### 💰 **Investments**
+- Portfolio tracking and performance monitoring
+- Asset allocation analysis
+- Investment holdings with real-time changes
+- YTD returns and contribution tracking
+
+### 🎯 **Goals**
+- Financial goal setting and tracking
+- Progress visualization with completion percentages
+- Priority-based goal management
+- Deadline tracking and alerts
+
+### 🏦 **Accounts**
+- Multi-account management (checking, savings, credit cards)
+- Real-time balance tracking
+- Account categorization and filtering
+- Net worth calculation
+
+### 📋 **Budgets**
+- Category-based budget management
+- Spending vs budget tracking
+- Over-budget alerts and notifications
+- Monthly budget performance analysis
+
+### 📈 **Reports**
+- Comprehensive financial reporting
+- Custom report generation
+- Scheduled report automation
+- Export capabilities for tax preparation
+
+### ⚙️ **Settings**
+- Profile and preference management
+- Notification settings
+- Security and privacy controls
+- Billing and subscription management
+
+## Technology Stack
+
+- **Framework**: Next.js 15 with App Router
+- **UI Components**: Radix UI primitives with custom styling
+- **Styling**: Tailwind CSS with custom design system
+- **Charts**: Recharts for data visualization
+- **Icons**: Tabler Icons
+- **Animations**: Framer Motion
+- **Type Safety**: TypeScript throughout
 
 ## Getting Started
 
-First, run the development server:
-
+1. **Install dependencies**:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. **Run the development server**:
+```bash
+npm run dev
+```
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+3. **Open your browser**:
+Navigate to [http://localhost:3000](http://localhost:3000)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Project Structure
 
-## Learn More
+```
+├── app/                    # Next.js app directory
+│   ├── dashboard/         # Main dashboard page
+│   ├── transactions/      # Transaction management
+│   ├── analytics/         # Financial analytics
+│   ├── investments/       # Investment tracking
+│   ├── goals/            # Financial goals
+│   ├── accounts/         # Account management
+│   ├── budgets/          # Budget tracking
+│   ├── reports/          # Financial reports
+│   └── settings/         # User settings
+├── components/           # Reusable UI components
+│   ├── ui/              # Base UI components
+│   └── ...              # Feature-specific components
+└── lib/                 # Utility functions
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Key Features
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Modern UI/UX
+- Responsive design that works on all devices
+- Dark mode support with system preference detection
+- Smooth animations and transitions
+- Accessible components following WCAG guidelines
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Data Visualization
+- Interactive charts and graphs
+- Real-time data updates
+- Multiple chart types (line, bar, pie, area)
+- Customizable date ranges and filters
 
-## Deploy on Vercel
+### Financial Management
+- Comprehensive transaction tracking
+- Multi-currency support
+- Budget management with alerts
+- Goal tracking with progress indicators
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Security & Privacy
+- Secure authentication system
+- Data encryption and privacy controls
+- Session management
+- Two-factor authentication support
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Development
+
+### Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
+
+### Component Architecture
+
+The application uses a modular component architecture with:
+- Reusable UI components in `/components/ui/`
+- Feature-specific components for each page
+- Consistent design system with Tailwind CSS
+- Type-safe props with TypeScript
+
+## Deployment
+
+The application is optimized for deployment on Vercel:
+
+1. Push your code to GitHub
+2. Connect your repository to Vercel
+3. Deploy with zero configuration
+
+For other platforms, build the application with `npm run build` and serve the `out` directory.
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License.
