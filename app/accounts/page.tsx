@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { IconPlus, IconCreditCard, IconWallet, IconPiggyBank, IconTrendingUp, IconTrendingDown } from "@tabler/icons-react"
+import { IconPlus, IconCreditCard, IconWallet, IconPigMoney, IconTrendingUp, IconTrendingDown } from "@tabler/icons-react"
 
 const accounts = [
   {
@@ -69,7 +69,7 @@ const getAccountIcon = (type: string) => {
     case "Checking":
       return IconWallet
     case "Savings":
-      return IconPiggyBank
+      return IconPigMoney
     case "Credit Card":
       return IconCreditCard
     case "Investment":

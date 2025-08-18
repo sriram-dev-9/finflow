@@ -39,9 +39,7 @@ const data = {
     { title: "Transactions", url: "/transactions", icon: IconCreditCard },
     { title: "Analytics", url: "/analytics", icon: IconChartBar },
     { title: "Accounts", url: "/accounts", icon: IconWallet },
-    { title: "Budgets", url: "/budgets", icon: IconPigMoney },
     { title: "Goals", url: "/goals", icon: IconTarget },
-    { title: "Investments", url: "/investments", icon: IconTrendingUp },
     { title: "Reports", url: "/reports", icon: IconReport },
   ],
   navSecondary: [

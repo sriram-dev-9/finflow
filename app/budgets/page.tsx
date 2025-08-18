@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { IconPlus, IconAlertTriangle, IconCheckCircle, IconTrendingUp } from "@tabler/icons-react"
+import { IconPlus, IconAlertTriangle, IconCheck, IconTrendingUp } from "@tabler/icons-react"
 
 const budgetCategories = [
   {
@@ -166,7 +166,7 @@ export default function BudgetsPage() {
                     {overBudgetCategories > 0 ? (
                       <IconAlertTriangle className="h-4 w-4 text-red-500" />
                     ) : (
-                      <IconCheckCircle className="h-4 w-4 text-green-500" />
+                      <IconCheck className="h-4 w-4 text-green-500" />
                     )}
                   </CardHeader>
                   <CardContent>
