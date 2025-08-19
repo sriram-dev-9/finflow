@@ -1,3 +1,5 @@
+"use client"
+
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import {
@@ -10,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { IconPlus, IconAlertTriangle, IconCheck, IconTrendingUp } from "@tabler/icons-react"
+import { useCurrency } from "@/lib/currency-context"
 
 const budgetCategories = [
   {
@@ -86,6 +89,7 @@ const getBudgetStatus = (spent: number, budgeted: number) => {
 }
 
 export default function BudgetsPage() {
+  const { formatCurrency } = useCurrency()
   const totalBudgeted = budgetCategories.reduce((sum, cat) => sum + cat.budgeted, 0)
   const totalSpent = budgetCategories.reduce((sum, cat) => sum + cat.spent, 0)
   const totalRemaining = totalBudgeted - totalSpent
@@ -127,7 +131,7 @@ export default function BudgetsPage() {
                     <CardTitle className="text-sm font-medium">Total Budget</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">${totalBudgeted.toLocaleString()}</div>
+                    <div className="text-2xl font-bold">{formatCurrency(totalBudgeted)}</div>
                     <p className="text-xs text-muted-foreground">
                       Monthly budget allocation
                     </p>
@@ -139,7 +143,7 @@ export default function BudgetsPage() {
                     <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">${totalSpent.toLocaleString()}</div>
+                    <div className="text-2xl font-bold">{formatCurrency(totalSpent)}</div>
                     <p className="text-xs text-muted-foreground">
                       {((totalSpent / totalBudgeted) * 100).toFixed(1)}% of budget used
                     </p>
@@ -152,7 +156,7 @@ export default function BudgetsPage() {
                   </CardHeader>
                   <CardContent>
                     <div className={`text-2xl font-bold ${totalRemaining >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      ${Math.abs(totalRemaining).toLocaleString()}
+                      {formatCurrency(Math.abs(totalRemaining))}
                     </div>
                     <p className="text-xs text-muted-foreground">
                       {totalRemaining >= 0 ? 'Left to spend' : 'Over budget'}
@@ -203,10 +207,10 @@ export default function BudgetsPage() {
                                 </div>
                                 <div className="text-right">
                                   <div className="font-medium">
-                                    ${category.spent.toLocaleString()} / ${category.budgeted.toLocaleString()}
+                                    {formatCurrency(category.spent)} / {formatCurrency(category.budgeted)}
                                   </div>
                                   <div className={`text-sm ${category.remaining >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                    {category.remaining >= 0 ? '$' + category.remaining : '-$' + Math.abs(category.remaining)} remaining
+                                    {category.remaining >= 0 ? formatCurrency(category.remaining) : '-' + formatCurrency(Math.abs(category.remaining))} remaining
                                   </div>
                                 </div>
                               </div>
@@ -246,14 +250,14 @@ export default function BudgetsPage() {
                               </CardHeader>
                               <CardContent className="space-y-4">
                                 <div className="flex justify-between items-center">
-                                  <span className="text-2xl font-bold">${category.spent.toLocaleString()}</span>
-                                  <span className="text-muted-foreground">of ${category.budgeted.toLocaleString()}</span>
+                                  <span className="text-2xl font-bold">{formatCurrency(category.spent)}</span>
+                                  <span className="text-muted-foreground">of {formatCurrency(category.budgeted)}</span>
                                 </div>
                                 <Progress value={Math.min(percentage, 100)} className="h-2" />
                                 <div className="flex justify-between text-sm">
                                   <span>{percentage.toFixed(1)}% used</span>
                                   <span className={category.remaining >= 0 ? 'text-green-500' : 'text-red-500'}>
-                                    {category.remaining >= 0 ? '+' : ''}${category.remaining}
+                                    {category.remaining >= 0 ? '+' : ''}{formatCurrency(category.remaining)}
                                   </span>
                                 </div>
                               </CardContent>

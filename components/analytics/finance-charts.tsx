@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { useEffect, useState, useContext, createContext } from "react"
+import { useCurrency } from "@/lib/currency-context"
 import {
   Bar, BarChart, CartesianGrid, XAxis, LineChart, Line, AreaChart, Area, PieChart, Pie, Label, RadarChart, PolarAngleAxis, PolarGrid, Radar, RadialBarChart, RadialBar,
 } from "recharts"
@@ -116,14 +117,11 @@ const weeklyStackConfig = {
 
 /* ------------------------------- Helper Utils ----------------------------- */
 
-function formatCurrency(n: number) {
-  return n.toLocaleString(undefined, { style: "currency", currency: "USD" })
-}
-
 /* ----------------------------- Chart Components --------------------------- */
 
 export function IncomeExpensesLine({ data }: { data?: Array<{ date: string; income: number; expenses: number }> }) {
   const contextData = useAnalyticsData()
+  const { formatCurrency } = useCurrency()
   // Use context data first, then provided data
   const chartData = contextData?.monthlyData?.length ? contextData.monthlyData : 
                    (data && data.length > 0 ? data : [])
@@ -484,6 +482,7 @@ interface AnalyticsData {
 }
 
 export function AnalyticsKPIs({ data }: { data: AnalyticsData | TransactionData[] | null }) {
+  const { formatCurrency } = useCurrency()
   let kpis
   
   if (!data) {

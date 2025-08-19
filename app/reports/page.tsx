@@ -8,13 +8,7 @@ import { Separator } from "@/components/ui/separator"
 import { IconDownload, IconFileSpreadsheet, IconChartLine, IconPigMoney } from "@tabler/icons-react"
 import { getDashboardStats } from "@/lib/database"
 import { DashboardStats } from "@/lib/types"
-
-function formatCurrency(amount: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(amount)
-}
+import { useCurrency } from "@/lib/currency-context"
 
 function formatDate(date: Date) {
   return date.toLocaleDateString("en-US", {
@@ -28,6 +22,7 @@ export default function ReportsPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [generatingReport, setGeneratingReport] = useState<string | null>(null)
+  const { formatCurrency } = useCurrency()
 
   useEffect(() => {
     const fetchStats = async () => {

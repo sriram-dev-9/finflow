@@ -19,6 +19,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table"
 import { toast } from "sonner"
+import { useCurrency } from "@/lib/currency-context"
 
 import { useIsMobile } from "@/hooks/use-mobile"
 import { Badge } from "@/components/ui/badge"
@@ -62,13 +63,6 @@ import {
 import { getTransactions, createTransaction, updateTransaction, deleteTransaction } from "@/lib/database"
 import { Transaction } from "@/lib/types"
 
-function formatCurrency(amount: number) {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(amount)
-}
-
 function formatDate(dateString: string) {
   return new Date(dateString).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -76,67 +70,6 @@ function formatDate(dateString: string) {
     day: 'numeric',
   })
 }
-
-const columns: ColumnDef<Transaction>[] = [
-  {
-    accessorKey: "description",
-    header: "Description",
-    cell: ({ row }) => (
-      <div className="font-medium max-w-[200px] truncate">
-        {row.original.description || "No description"}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "category",
-    header: "Category",
-    cell: ({ row }) => (
-      <Badge variant="outline" className="text-muted-foreground px-1.5">
-        {row.original.category}
-      </Badge>
-    ),
-  },
-  {
-    accessorKey: "type",
-    header: "Type",
-    cell: ({ row }) => (
-      <Badge
-        variant="outline"
-        className={`px-1.5 ${
-          row.original.type === 'income' 
-            ? 'text-green-600 border-green-200' 
-            : 'text-red-600 border-red-200'
-        }`}
-      >
-        {row.original.type === 'income' ? 'Income' : 'Expense'}
-      </Badge>
-    ),
-  },
-  {
-    accessorKey: "amount",
-    header: () => <div className="text-right">Amount</div>,
-    cell: ({ row }) => (
-      <div className={`text-right tabular-nums font-medium ${
-        row.original.type === 'income' ? 'text-green-600' : 'text-red-600'
-      }`}>
-        {row.original.type === 'income' ? '+' : '-'}{formatCurrency(Number(row.original.amount))}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "date",
-    header: "Date",
-    cell: ({ row }) => (
-      <div className="text-muted-foreground">
-        {formatDate(row.original.date)}
-      </div>
-    ),
-  },
-  {
-    id: "actions",
-    cell: ({ row }) => <TransactionActions transaction={row.original} />,
-  },
-]
 
 function TransactionActions({ transaction }: { transaction: Transaction }) {
   const [isEditing, setIsEditing] = React.useState(false)
@@ -404,6 +337,68 @@ export function DataTable() {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
   const [showAddForm, setShowAddForm] = React.useState(false)
+  const { formatCurrency } = useCurrency()
+
+  const columns: ColumnDef<Transaction>[] = [
+    {
+      accessorKey: "description",
+      header: "Description",
+      cell: ({ row }) => (
+        <div className="font-medium max-w-[200px] truncate">
+          {row.original.description || "No description"}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "category",
+      header: "Category",
+      cell: ({ row }) => (
+        <Badge variant="outline" className="text-muted-foreground px-1.5">
+          {row.original.category}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: "type",
+      header: "Type",
+      cell: ({ row }) => (
+        <Badge
+          variant="outline"
+          className={`px-1.5 ${
+            row.original.type === 'income' 
+              ? 'text-green-600 border-green-200' 
+              : 'text-red-600 border-red-200'
+          }`}
+        >
+          {row.original.type === 'income' ? 'Income' : 'Expense'}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: "amount",
+      header: () => <div className="text-right">Amount</div>,
+      cell: ({ row }) => (
+        <div className={`text-right tabular-nums font-medium ${
+          row.original.type === 'income' ? 'text-green-600' : 'text-red-600'
+        }`}>
+          {row.original.type === 'income' ? '+' : '-'}{formatCurrency(Number(row.original.amount))}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "date",
+      header: "Date",
+      cell: ({ row }) => (
+        <div className="text-muted-foreground">
+          {formatDate(row.original.date)}
+        </div>
+      ),
+    },
+    {
+      id: "actions",
+      cell: ({ row }) => <TransactionActions transaction={row.original} />,
+    },
+  ]
 
   React.useEffect(() => {
     async function fetchTransactions() {
