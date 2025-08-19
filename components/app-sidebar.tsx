@@ -18,6 +18,7 @@ import {
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
+import { useAuth } from "@/lib/auth"
 import {
   Sidebar,
   SidebarContent,
@@ -28,27 +29,40 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 
-const data = {
-  user: {
-    name: "FinFlow User",
-    email: "user@finflow.com",
-    avatar: "/avatars/user.jpg",
-  },
-  navMain: [
-    { title: "Dashboard", url: "/dashboard", icon: IconDashboard },
-    { title: "Transactions", url: "/transactions", icon: IconCreditCard },
-    { title: "Analytics", url: "/analytics", icon: IconChartBar },
-    { title: "Accounts", url: "/accounts", icon: IconWallet },
-    { title: "Goals", url: "/goals", icon: IconTarget },
-    { title: "Reports", url: "/reports", icon: IconReport },
-  ],
-  navSecondary: [
-    { title: "Settings", url: "/settings", icon: IconSettings },
-    { title: "Search", url: "#", icon: IconSearch },
-  ],
-}
+const navMainItems = [
+  { title: "Dashboard", url: "/dashboard", icon: IconDashboard },
+  { title: "Transactions", url: "/transactions", icon: IconCreditCard },
+  { title: "Analytics", url: "/analytics", icon: IconChartBar },
+  { title: "Accounts", url: "/accounts", icon: IconWallet },
+  { title: "Goals", url: "/goals", icon: IconTarget },
+  { title: "Reports", url: "/reports", icon: IconReport },
+]
+
+const navSecondaryItems = [
+  { title: "Settings", url: "/settings", icon: IconSettings },
+  { title: "Search", url: "#", icon: IconSearch },
+]
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { user } = useAuth()
+
+  // Create user data from authenticated user
+  const userData = React.useMemo(() => {
+    if (!user) {
+      return {
+        name: "Loading...",
+        email: "loading@finflow.com",
+        avatar: "/avatars/default.jpg",
+      }
+    }
+
+    return {
+      name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || "FinFlow User",
+      email: user.email || "user@finflow.com",
+      avatar: user.user_metadata?.avatar_url || user.user_metadata?.picture || "/avatars/default.jpg",
+    }
+  }, [user])
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -67,11 +81,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-  <NavMain items={data.navMain} />
-  <NavSecondary items={data.navSecondary} className="mt-auto" />
+        <NavMain items={navMainItems} />
+        <NavSecondary items={navSecondaryItems} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={userData} />
       </SidebarFooter>
     </Sidebar>
   )
