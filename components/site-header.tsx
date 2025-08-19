@@ -5,7 +5,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { IconBell, IconSettings, IconChartBar } from "@tabler/icons-react"
+import { IconSettings, IconChartBar } from "@tabler/icons-react"
 
 const getPageTitle = (pathname: string) => {
   switch (pathname) {
@@ -50,9 +50,6 @@ export function SiteHeader() {
             <Link href="/analytics">
               <IconChartBar className="h-4 w-4" />
             </Link>
-          </Button>
-          <Button variant="ghost" size="sm">
-            <IconBell className="h-4 w-4" />
           </Button>
           <Button variant="ghost" size="sm" asChild>
             <Link href="/settings">
