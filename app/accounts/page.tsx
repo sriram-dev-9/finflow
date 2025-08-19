@@ -17,14 +17,15 @@ interface Account {
   id: string;
   user_id: string;
   name: string;
-  type: 'checking' | 'savings' | 'credit' | 'investment';
-  balance: number;
+  type?: 'checking' | 'savings' | 'credit' | 'investment';
+  balance?: number;
   created_at: string;
 }
 
 export default function AccountsPage() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const { user } = useAuth();
   const { formatCurrency } = useCurrency();
@@ -43,6 +44,7 @@ export default function AccountsPage() {
   const fetchAccounts = async () => {
     try {
       setLoading(true);
+      setError(null);
       const { data, error } = await supabase
         .from('accounts')
         .select('*')
@@ -52,6 +54,8 @@ export default function AccountsPage() {
       setAccounts(data || []);
     } catch (error) {
       console.error('Error fetching accounts:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load accounts';
+      setError(errorMessage);
       toast.error('Failed to load accounts');
     } finally {
       setLoading(false);
@@ -60,10 +64,28 @@ export default function AccountsPage() {
 
   const handleCreateAccount = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      toast.error('User not authenticated');
+      return;
+    }
+    
     try {
-      const { error } = await supabase.from('accounts').insert([newAccount]);
+      const { data, error } = await supabase.from('accounts').insert([{
+        name: newAccount.name,
+        type: newAccount.type,
+        balance: newAccount.balance,
+        user_id: user.id
+      }]);
 
-      if (error) throw error;
+      if (error) {
+        // Check if error is due to missing columns
+        if (error.message.includes('balance') || error.message.includes('type')) {
+          toast.error('Database needs to be updated. Please run the migration script.');
+          console.error('Database schema error:', error);
+          return;
+        }
+        throw error;
+      }
 
       toast.success('Account created successfully');
       setShowCreateForm(false);
@@ -127,6 +149,34 @@ export default function AccountsPage() {
     );
   }
 
+  if (error && error.includes('balance')) {
+    return (
+      <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+        <div className="px-4 lg:px-6">
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold tracking-tight">Accounts</h1>
+            <p className="text-muted-foreground">
+              Manage your financial accounts
+            </p>
+          </div>
+        </div>
+        <div className="px-4 lg:px-6">
+          <Card className="p-6 border-orange-200 bg-orange-50">
+            <div className="text-center">
+              <h3 className="text-lg font-semibold mb-2 text-orange-800">Database Update Required</h3>
+              <p className="text-orange-700 mb-4">
+                The accounts table needs to be updated to support account types and balances.
+              </p>
+              <p className="text-sm text-orange-600">
+                Please run the migration script in <code>migrations/add_accounts_columns.sql</code> in your Supabase dashboard.
+              </p>
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
       <div className="px-4 lg:px-6">
@@ -171,8 +221,8 @@ export default function AccountsPage() {
                     <Label htmlFor="type">Account Type</Label>
                     <Select
                       value={newAccount.type}
-                      onValueChange={(value: Account['type']) =>
-                        setNewAccount({ ...newAccount, type: value })
+                      onValueChange={(value) =>
+                        setNewAccount({ ...newAccount, type: value as Account['type'] })
                       }
                     >
                       <SelectTrigger>
@@ -213,13 +263,13 @@ export default function AccountsPage() {
             <Card key={account.id} className="p-6">
               <div className="flex items-start justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className={`p-2 rounded-lg ${getAccountColor(account.type)}`}>
-                    {getAccountIcon(account.type)}
+                  <div className={`p-2 rounded-lg ${getAccountColor(account.type || 'checking')}`}>
+                    {getAccountIcon(account.type || 'checking')}
                   </div>
                   <div>
                     <h3 className="font-semibold">{account.name}</h3>
                     <Badge variant="secondary" className="text-xs capitalize">
-                      {account.type}
+                      {account.type || 'checking'}
                     </Badge>
                   </div>
                 </div>
@@ -233,7 +283,7 @@ export default function AccountsPage() {
                 </div>
               </div>
               <div className="mt-4">
-                <p className="text-2xl font-bold">{formatCurrency(account.balance)}</p>
+                <p className="text-2xl font-bold">{formatCurrency(account.balance || 0)}</p>
                 <p className="text-sm text-muted-foreground">
                   Current Balance
                 </p>
