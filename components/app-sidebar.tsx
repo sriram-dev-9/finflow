@@ -6,13 +6,9 @@ import {
   IconCreditCard,
   IconChartBar,
   IconDashboard,
-  IconTarget,
   IconWallet,
   IconSettings,
-  IconSearch,
   IconReport,
-  IconPigMoney,
-  IconTrendingUp,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -34,13 +30,11 @@ const navMainItems = [
   { title: "Transactions", url: "/transactions", icon: IconCreditCard },
   { title: "Analytics", url: "/analytics", icon: IconChartBar },
   { title: "Accounts", url: "/accounts", icon: IconWallet },
-  { title: "Goals", url: "/goals", icon: IconTarget },
   { title: "Reports", url: "/reports", icon: IconReport },
 ]
 
 const navSecondaryItems = [
   { title: "Settings", url: "/settings", icon: IconSettings },
-  { title: "Search", url: "#", icon: IconSearch },
 ]
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
