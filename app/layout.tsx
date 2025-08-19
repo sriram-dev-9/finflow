@@ -5,6 +5,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { AuthForm } from "@/components/auth-form";
+import { AuthHandler } from "@/components/auth-handler";
 import { Toaster } from "@/components/ui/sonner";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
@@ -28,13 +29,18 @@ function AppContent({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center">
-        <div className="text-center">
-          <div className="text-2xl font-bold mb-2">FinFlow</div>
-          <div className="text-muted-foreground">Loading...</div>
-        </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
+  }
+
+  // Add auth handler to catch authentication codes
+  if (typeof window !== 'undefined') {
+    const urlParams = new URLSearchParams(window.location.search)
+    if (urlParams.get('code') || urlParams.get('access_token')) {
+      return <AuthHandler />
+    }
   }
 
   if (!user) {
