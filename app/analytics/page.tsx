@@ -1,8 +1,10 @@
-import { Suspense, createContext, useContext } from "react"
-import { AnalyticsKPIs, FinanceChartsGrid } from "@/components/analytics/finance-charts"
+"use client"
+
+import { Suspense, useEffect, useState } from "react"
+import { AnalyticsKPIs, FinanceChartsGrid, AnalyticsContext } from "@/components/analytics/finance-charts"
 import { getAnalyticsData } from "@/lib/database"
 
-// Create context for analytics data
+// Define the interface here for type checking
 interface AnalyticsData {
   monthlyData: Array<{ date: string; income: number; expenses: number }>
   categoryData: Array<{ category: string; amount: number }>
@@ -16,20 +18,41 @@ interface AnalyticsData {
   }
 }
 
-const AnalyticsContext = createContext<AnalyticsData | null>(null)
+function AnalyticsContent() {
+	const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null)
+	const [loading, setLoading] = useState(true)
 
-export function useAnalyticsData() {
-  return useContext(AnalyticsContext)
-}
+	useEffect(() => {
+		async function fetchData() {
+			try {
+				const data = await getAnalyticsData()
+				setAnalyticsData(data)
+			} catch (error) {
+				console.log('No analytics data available:', error)
+				setAnalyticsData(null)
+			} finally {
+				setLoading(false)
+			}
+		}
+		
+		fetchData()
+	}, [])
 
-async function AnalyticsContent() {
-	let analyticsData: AnalyticsData | null = null
-	
-	try {
-		analyticsData = await getAnalyticsData()
-	} catch (error) {
-		// If user not authenticated or no data, show empty state message
-		console.log('No analytics data available:', error)
+	if (loading) {
+		return (
+			<div className="px-4 lg:px-6">
+				<div className="grid gap-4 md:grid-cols-4 mb-6">
+					{[...Array(4)].map((_, i) => (
+						<div key={i} className="h-32 bg-muted animate-pulse rounded-lg" />
+					))}
+				</div>
+				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+					{[...Array(6)].map((_, i) => (
+						<div key={i} className="h-80 bg-muted animate-pulse rounded-lg" />
+					))}
+				</div>
+			</div>
+		)
 	}
 
 	if (!analyticsData) {
@@ -69,22 +92,7 @@ export default function AnalyticsPage() {
 					</p>
 				</div>
 			</div>
-			<Suspense fallback={
-				<div className="px-4 lg:px-6">
-					<div className="grid gap-4 md:grid-cols-4 mb-6">
-						{[...Array(4)].map((_, i) => (
-							<div key={i} className="h-32 bg-muted animate-pulse rounded-lg" />
-						))}
-					</div>
-					<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-						{[...Array(6)].map((_, i) => (
-							<div key={i} className="h-80 bg-muted animate-pulse rounded-lg" />
-						))}
-					</div>
-				</div>
-			}>
-				<AnalyticsContent />
-			</Suspense>
+			<AnalyticsContent />
 		</div>
 	)
 }

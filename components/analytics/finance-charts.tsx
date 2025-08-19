@@ -24,7 +24,7 @@ interface AnalyticsData {
   }
 }
 
-const AnalyticsContext = createContext<AnalyticsData | null>(null)
+export const AnalyticsContext = createContext<AnalyticsData | null>(null)
 
 export function useAnalyticsData() {
   return useContext(AnalyticsContext)
@@ -66,53 +66,6 @@ interface AnalyticsData {
 const months = ["Jan","Feb","Mar","Apr","May","Jun"]
 
 // Income / Expenses daily-ish sample for line + area (synthetic)
-const incomeExpenseSeries = [
-  { date: "2024-01-01", income: 5200, expenses: 4100 },
-  { date: "2024-02-01", income: 5250, expenses: 4300 },
-  { date: "2024-03-01", income: 5225, expenses: 4150 },
-  { date: "2024-04-01", income: 5300, expenses: 4400 },
-  { date: "2024-05-01", income: 5350, expenses: 4500 },
-  { date: "2024-06-01", income: 5400, expenses: 4600 },
-]
-
-// Monthly expenses by category for bar & pie
-const categoryExpenseData = [
-  { category: "Housing", amount: 1800 },
-  { category: "Food", amount: 710 },
-  { category: "Transportation", amount: 320 },
-  { category: "Bills & Utilities", amount: 275 },
-  { category: "Insurance", amount: 400 },
-  { category: "Entertainment", amount: 130 },
-  { category: "Debt", amount: 350 },
-]
-
-// Radar chart compares planned (budget) vs actual for key groups
-const budgetVsActual = [
-  { segment: "Housing", budget: 1800, actual: 1820 },
-  { segment: "Food", budget: 700, actual: 710 },
-  { segment: "Transport", budget: 300, actual: 320 },
-  { segment: "Bills", budget: 280, actual: 275 },
-  { segment: "Insurance", budget: 400, actual: 400 },
-  { segment: "Debt", budget: 350, actual: 350 },
-]
-
-// Radial chart: payment method share (synthetic count of transactions)
-const paymentMethodShare = [
-  { method: "Bank", value: 28, fill: "var(--color-bank)" },
-  { method: "Credit", value: 22, fill: "var(--color-credit)" },
-  { method: "Debit", value: 18, fill: "var(--color-debit)" },
-  { method: "AutoPay", value: 16, fill: "var(--color-autopay)" },
-  { method: "Other", value: 8, fill: "var(--color-other)" },
-]
-
-// Stacked bar: weekly savings vs discretionary spend
-const weeklySavingsStack = [
-  { week: "W1", savings: 500, discretionary: 320 },
-  { week: "W2", savings: 450, discretionary: 380 },
-  { week: "W3", savings: 480, discretionary: 360 },
-  { week: "W4", savings: 525, discretionary: 410 },
-]
-
 /* --------------------------------- Configs -------------------------------- */
 const incomeExpenseConfig = {
   income: { label: "Income", color: "hsl(var(--chart-2))" },
@@ -165,9 +118,9 @@ function formatCurrency(n: number) {
 
 export function IncomeExpensesLine({ data }: { data?: Array<{ date: string; income: number; expenses: number }> }) {
   const contextData = useAnalyticsData()
-  // Use context data first, then provided data, then fallback to static data
+  // Use context data first, then provided data
   const chartData = contextData?.monthlyData?.length ? contextData.monthlyData : 
-                   (data && data.length > 0 ? data : incomeExpenseSeries)
+                   (data && data.length > 0 ? data : [])
 
   return (
     <Card className="py-2">
@@ -176,15 +129,21 @@ export function IncomeExpensesLine({ data }: { data?: Array<{ date: string; inco
         <CardDescription>Monthly trend</CardDescription>
       </CardHeader>
       <CardContent className="px-2 sm:px-4">
-        <ChartContainer config={incomeExpenseConfig} className="h-[220px] w-full">
-          <LineChart accessibilityLayer data={chartData} margin={{ left: 8, right: 8 }}>
-            <CartesianGrid vertical={false} />
-            <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(v) => new Date(v).toLocaleDateString(undefined,{month:'short'})} />
-            <ChartTooltip content={<ChartTooltipContent className="w-[140px]" nameKey="views" />} />
-            <Line dataKey="expenses" type="monotone" stroke="var(--color-expenses)" strokeWidth={2} dot={false} />
-            <Line dataKey="income" type="monotone" stroke="var(--color-income)" strokeWidth={2} dot={false} />
-          </LineChart>
-        </ChartContainer>
+        {chartData.length === 0 ? (
+          <div className="flex items-center justify-center h-[220px] text-muted-foreground">
+            No transaction data available
+          </div>
+        ) : (
+          <ChartContainer config={incomeExpenseConfig} className="h-[220px] w-full">
+            <LineChart accessibilityLayer data={chartData} margin={{ left: 8, right: 8 }}>
+              <CartesianGrid vertical={false} />
+              <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(v) => new Date(v).toLocaleDateString(undefined,{month:'short'})} />
+              <ChartTooltip content={<ChartTooltipContent className="w-[140px]" nameKey="views" />} />
+              <Line dataKey="expenses" type="monotone" stroke="var(--color-expenses)" strokeWidth={2} dot={false} />
+              <Line dataKey="income" type="monotone" stroke="var(--color-income)" strokeWidth={2} dot={false} />
+            </LineChart>
+          </ChartContainer>
+        )}
       </CardContent>
     </Card>
   )
@@ -233,7 +192,7 @@ export function NetSavingsArea() {
 
 export function CategoryExpensesBar() {
   const contextData = useAnalyticsData()
-  const expenseData = contextData?.categoryData?.length ? contextData.categoryData : categoryExpenseData
+  const expenseData = contextData?.categoryData || []
   
   if (expenseData.length === 0) {
     return (
@@ -273,7 +232,7 @@ export function CategoryExpensesBar() {
 
 export function CategoryExpensesPie() {
   const contextData = useAnalyticsData()
-  const expenseData = contextData?.categoryData?.length ? contextData.categoryData : categoryExpenseData
+  const expenseData = contextData?.categoryData || []
   
   const total = expenseData.reduce((a,c)=>a+c.amount,0)
   const pieData = expenseData.map(d => ({ name: d.category, value: d.amount, fill: `var(--color-${d.category.replace(/[^A-Za-z]/g,'')})` }))
@@ -329,6 +288,25 @@ export function CategoryExpensesPie() {
 }
 
 export function BudgetRadar() {
+  const contextData = useAnalyticsData()
+  const budgetData = contextData?.budgetData || []
+  
+  if (budgetData.length === 0) {
+    return (
+      <Card className="flex flex-col">
+        <CardHeader className="items-center pb-2">
+          <CardTitle className="text-base">Budget vs Actual</CardTitle>
+          <CardDescription>Key segments</CardDescription>
+        </CardHeader>
+        <CardContent className="pb-0">
+          <div className="flex items-center justify-center h-[250px] text-muted-foreground">
+            No budget data available
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+  
   return (
     <Card className="flex flex-col">
       <CardHeader className="items-center pb-2">
@@ -337,7 +315,7 @@ export function BudgetRadar() {
       </CardHeader>
       <CardContent className="pb-0">
         <ChartContainer config={budgetActualConfig} className="mx-auto aspect-square max-h-[250px]">
-          <RadarChart data={budgetVsActual} margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
+          <RadarChart data={budgetData} margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
             <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="line" nameKey="segment" />} />
             <PolarAngleAxis dataKey="segment" tickLine={false} />
             <PolarGrid />
@@ -355,7 +333,35 @@ export function BudgetRadar() {
 }
 
 export function PaymentMethodsRadial() {
+  const contextData = useAnalyticsData()
+  const paymentData = contextData?.paymentMethodData || []
+  
+  // Convert to the format expected by RadialBarChart
+  const chartData = paymentData.map((item, index) => ({
+    method: item.method,
+    value: item.percentage,
+    fill: `var(--color-method-${index + 1})`
+  }))
+  
   const id = "payment-radial"
+  
+  if (paymentData.length === 0) {
+    return (
+      <Card className="flex flex-col">
+        <ChartStyle id={id} config={paymentConfig} />
+        <CardHeader className="items-center pb-2">
+          <CardTitle className="text-base">Payment Methods</CardTitle>
+          <CardDescription>Transaction share</CardDescription>
+        </CardHeader>
+        <CardContent className="pb-0">
+          <div className="flex items-center justify-center h-[250px] text-muted-foreground">
+            No payment data available
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+  
   return (
     <Card className="flex flex-col">
       <ChartStyle id={id} config={paymentConfig} />
@@ -365,7 +371,7 @@ export function PaymentMethodsRadial() {
       </CardHeader>
       <CardContent className="pb-0">
         <ChartContainer id={id} config={paymentConfig} className="mx-auto aspect-square max-h-[250px]">
-          <RadialBarChart data={paymentMethodShare} innerRadius={30} outerRadius={110}>
+          <RadialBarChart data={chartData} innerRadius={30} outerRadius={110}>
             <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel nameKey="method" />} />
             <RadialBar dataKey="value" background />
           </RadialBarChart>
@@ -380,15 +386,44 @@ export function PaymentMethodsRadial() {
 }
 
 export function WeeklySavingsStacked() {
+  const contextData = useAnalyticsData()
+  
+  // Since we don't have weekly data, we'll show a message or use simplified monthly data
+  // In a real implementation, you'd process transactions by weeks
+  const hasData = contextData?.monthlyData && contextData.monthlyData.length > 0
+  
+  if (!hasData) {
+    return (
+      <Card className="py-2">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Weekly Savings vs Spend</CardTitle>
+          <CardDescription>Current month</CardDescription>
+        </CardHeader>
+        <CardContent className="px-2 sm:px-4">
+          <div className="flex items-center justify-center h-[220px] text-muted-foreground">
+            Weekly data not available
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+  
+  // Convert monthly data to a simplified weekly format (just for display)
+  const weeklyData = contextData.monthlyData.slice(-4).map((item, index) => ({
+    week: `Week ${index + 1}`,
+    savings: Math.max(0, item.income - item.expenses),
+    discretionary: Math.abs(item.expenses) * 0.3 // Approximate discretionary spending
+  }))
+  
   return (
     <Card className="py-2">
       <CardHeader className="pb-2">
         <CardTitle className="text-base">Weekly Savings vs Spend</CardTitle>
-        <CardDescription>Current month</CardDescription>
+        <CardDescription>Recent months approximation</CardDescription>
       </CardHeader>
       <CardContent className="px-2 sm:px-4">
         <ChartContainer config={weeklyStackConfig} className="h-[220px] w-full">
-          <BarChart data={weeklySavingsStack} accessibilityLayer margin={{ left: 8, right: 8 }}>
+          <BarChart data={weeklyData} accessibilityLayer margin={{ left: 8, right: 8 }}>
             <XAxis dataKey="week" tickLine={false} axisLine={false} tickMargin={8} />
             <Bar dataKey="savings" stackId="a" fill="var(--color-savings)" radius={[0,0,4,4]} />
             <Bar dataKey="discretionary" stackId="a" fill="var(--color-discretionary)" radius={[4,4,0,0]} />
