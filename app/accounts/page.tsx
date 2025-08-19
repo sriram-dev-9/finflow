@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import React from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import { useCurrency } from '@/lib/currency-context';
@@ -8,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { IconPlus, IconCreditCard, IconWallet, IconPigMoney, IconEdit, IconTrash, IconTrendingUp } from '@tabler/icons-react';
@@ -27,6 +29,8 @@ export default function AccountsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<Account | null>(null);
+  const [deletingAccount, setDeletingAccount] = useState<Account | null>(null);
   const { user } = useAuth();
   const { formatCurrency } = useCurrency();
   const [newAccount, setNewAccount] = useState({
@@ -98,6 +102,54 @@ export default function AccountsPage() {
     } catch (error) {
       console.error('Error creating account:', error);
       toast.error('Failed to create account');
+    }
+  };
+
+  const handleEditAccount = async (account: Account, updatedData: Partial<Account>) => {
+    if (!user) {
+      toast.error('User not authenticated');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('accounts')
+        .update(updatedData)
+        .eq('id', account.id)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      toast.success('Account updated successfully');
+      setEditingAccount(null);
+      fetchAccounts();
+    } catch (error) {
+      console.error('Error updating account:', error);
+      toast.error('Failed to update account');
+    }
+  };
+
+  const handleDeleteAccount = async (account: Account) => {
+    if (!user) {
+      toast.error('User not authenticated');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('accounts')
+        .delete()
+        .eq('id', account.id)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      toast.success('Account deleted successfully');
+      setDeletingAccount(null);
+      fetchAccounts();
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      toast.error('Failed to delete account');
     }
   };
 
@@ -274,10 +326,10 @@ export default function AccountsPage() {
                   </div>
                 </div>
                 <div className="flex space-x-1">
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" onClick={() => setEditingAccount(account)}>
                     <IconEdit className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" onClick={() => setDeletingAccount(account)}>
                     <IconTrash className="h-4 w-4" />
                   </Button>
                 </div>
@@ -308,6 +360,124 @@ export default function AccountsPage() {
           </Card>
         )}
       </div>
+
+      {/* Edit Account Dialog */}
+      <Dialog open={!!editingAccount} onOpenChange={() => setEditingAccount(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Account</DialogTitle>
+            <DialogDescription>
+              Update your account information
+            </DialogDescription>
+          </DialogHeader>
+          {editingAccount && (
+            <EditAccountForm
+              account={editingAccount}
+              onSave={(updatedData) => handleEditAccount(editingAccount, updatedData)}
+              onCancel={() => setEditingAccount(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Account Dialog */}
+      <Dialog open={!!deletingAccount} onOpenChange={() => setDeletingAccount(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Account</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{deletingAccount?.name}"? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeletingAccount(null)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={() => deletingAccount && handleDeleteAccount(deletingAccount)}
+            >
+              Delete Account
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+}
+
+// Edit Account Form Component
+function EditAccountForm({ 
+  account, 
+  onSave, 
+  onCancel 
+}: { 
+  account: Account; 
+  onSave: (data: Partial<Account>) => void; 
+  onCancel: () => void; 
+}) {
+  const [formData, setFormData] = useState({
+    name: account.name,
+    type: account.type || 'checking',
+    balance: account.balance || 0,
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave(formData);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="edit-name">Account Name</Label>
+        <Input
+          id="edit-name"
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          required
+        />
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="edit-type">Account Type</Label>
+          <Select
+            value={formData.type}
+            onValueChange={(value) => setFormData({ ...formData, type: value as 'checking' | 'savings' | 'credit' | 'investment' })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="checking">Checking</SelectItem>
+              <SelectItem value="savings">Savings</SelectItem>
+              <SelectItem value="credit">Credit Card</SelectItem>
+              <SelectItem value="investment">Investment</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="edit-balance">Balance</Label>
+          <Input
+            id="edit-balance"
+            type="number"
+            step="0.01"
+            value={formData.balance}
+            onChange={(e) => setFormData({ ...formData, balance: parseFloat(e.target.value) || 0 })}
+          />
+        </div>
+      </div>
+      
+      <DialogFooter>
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit">
+          Save Changes
+        </Button>
+      </DialogFooter>
+    </form>
   );
 }
