@@ -73,10 +73,20 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
   const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0)
   
+  // Previous month dates
+  const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+  const prevMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0)
+  
   // Get all transactions for current month
   const monthlyTransactions = await getTransactionsByDateRange(
     currentMonthStart.toISOString().split('T')[0],
     currentMonthEnd.toISOString().split('T')[0]
+  )
+  
+  // Get all transactions for previous month
+  const prevMonthTransactions = await getTransactionsByDateRange(
+    prevMonthStart.toISOString().split('T')[0],
+    prevMonthEnd.toISOString().split('T')[0]
   )
   
   // Get all transactions for net worth calculation
@@ -90,6 +100,14 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     .filter(t => t.type === 'expense')
     .reduce((sum, t) => sum + Number(t.amount), 0)
   
+  const prevMonthIncome = prevMonthTransactions
+    .filter(t => t.type === 'income')
+    .reduce((sum, t) => sum + Number(t.amount), 0)
+  
+  const prevMonthExpenses = prevMonthTransactions
+    .filter(t => t.type === 'expense')
+    .reduce((sum, t) => sum + Number(t.amount), 0)
+  
   const totalIncome = allTransactions
     .filter(t => t.type === 'income')
     .reduce((sum, t) => sum + Number(t.amount), 0)
@@ -99,7 +117,15 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     .reduce((sum, t) => sum + Number(t.amount), 0)
   
   const netWorth = totalIncome - totalExpenses
+  const prevNetWorth = prevMonthIncome - prevMonthExpenses
   const savingsRate = monthlyIncome > 0 ? ((monthlyIncome - monthlyExpenses) / monthlyIncome) * 100 : 0
+  const prevSavingsRate = prevMonthIncome > 0 ? ((prevMonthIncome - prevMonthExpenses) / prevMonthIncome) * 100 : 0
+  
+  // Calculate growth percentages
+  const netWorthGrowth = prevNetWorth !== 0 ? ((netWorth - prevNetWorth) / Math.abs(prevNetWorth)) * 100 : 0
+  const incomeGrowth = prevMonthIncome !== 0 ? ((monthlyIncome - prevMonthIncome) / prevMonthIncome) * 100 : 0
+  const expenseGrowth = prevMonthExpenses !== 0 ? ((monthlyExpenses - prevMonthExpenses) / prevMonthExpenses) * 100 : 0
+  const savingsGrowth = prevSavingsRate !== 0 ? ((savingsRate - prevSavingsRate) / Math.abs(prevSavingsRate)) * 100 : 0
   
   return {
     totalIncome,
@@ -107,7 +133,11 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     netWorth,
     savingsRate,
     monthlyIncome,
-    monthlyExpenses
+    monthlyExpenses,
+    netWorthGrowth,
+    incomeGrowth,
+    expenseGrowth,
+    savingsGrowth
   }
 }
 
@@ -334,7 +364,7 @@ function processMonthlyData(transactions: Transaction[]) {
     }
     
     const monthData = monthlyMap.get(monthKey)
-    if (transaction.type === 'income') {
+    if (transaction.type.toLowerCase() === 'income') {
       monthData.income += transaction.amount
     } else {
       monthData.expenses += Math.abs(transaction.amount)

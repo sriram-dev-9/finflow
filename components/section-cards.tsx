@@ -82,11 +82,11 @@ export function SectionCards() {
     )
   }
 
-  // Calculate growth percentages (simplified - in a real app you'd compare to previous period)
-  const netWorthGrowth = 3.2 // You could calculate this by comparing to previous month
-  const incomeGrowth = 2.3
-  const expenseGrowth = -1.2
-  const savingsGrowth = 4.1
+  // Use dynamic growth percentages from the database
+  const netWorthGrowth = stats.netWorthGrowth
+  const incomeGrowth = stats.incomeGrowth
+  const expenseGrowth = stats.expenseGrowth
+  const savingsGrowth = stats.savingsGrowth
 
   return (
     <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
@@ -105,11 +105,23 @@ export function SectionCards() {
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            {netWorthGrowth >= 0 ? 'Growing steadily this month' : 'Declined this month'} 
+            {netWorthGrowth > 5 
+              ? 'Excellent financial growth' 
+              : netWorthGrowth > 0 
+                ? 'Growing steadily this month'
+                : netWorthGrowth > -5
+                  ? 'Slight decline this month'
+                  : 'Significant decline this month'
+            } 
             {netWorthGrowth >= 0 ? <IconTrendingUp className="size-4" /> : <IconTrendingDown className="size-4" />}
           </div>
           <div className="text-muted-foreground">
-            Total income minus expenses
+            {stats.netWorth > 10000 
+              ? 'Strong financial foundation' 
+              : stats.netWorth > 0 
+                ? 'Building wealth progressively'
+                : 'Focus on increasing income'
+            }
           </div>
         </CardFooter>
       </Card>
@@ -129,11 +141,25 @@ export function SectionCards() {
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            {incomeGrowth >= 0 ? 'Income increased this month' : 'Income decreased this month'} 
+            {incomeGrowth > 10 
+              ? 'Outstanding income boost'
+              : incomeGrowth > 0 
+                ? 'Income increased this month'
+                : incomeGrowth > -10
+                  ? 'Income decreased slightly'
+                  : 'Significant income decline'
+            } 
             {incomeGrowth >= 0 ? <IconTrendingUp className="size-4" /> : <IconTrendingDown className="size-4" />}
           </div>
           <div className="text-muted-foreground">
-            Current month earnings
+            {stats.monthlyIncome > 5000 
+              ? 'Excellent monthly earnings' 
+              : stats.monthlyIncome > 2000 
+                ? 'Good income stream'
+                : stats.monthlyIncome > 0
+                  ? 'Building income sources'
+                  : 'Need to establish income'
+            }
           </div>
         </CardFooter>
       </Card>
@@ -153,11 +179,23 @@ export function SectionCards() {
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            {expenseGrowth <= 0 ? 'Spending decreased' : 'Spending increased'} 
+            {expenseGrowth < -10 
+              ? 'Excellent cost reduction'
+              : expenseGrowth <= 0 
+                ? 'Spending decreased'
+                : expenseGrowth < 10
+                  ? 'Spending increased slightly'
+                  : 'Significant spending increase'
+            } 
             {expenseGrowth <= 0 ? <IconTrendingDown className="size-4" /> : <IconTrendingUp className="size-4" />}
           </div>
           <div className="text-muted-foreground">
-            {expenseGrowth <= 0 ? 'Good budget control' : 'Review spending habits'}
+            {expenseGrowth <= 0 
+              ? 'Great budget discipline' 
+              : expenseGrowth < 15
+                ? 'Monitor spending patterns'
+                : 'Review budget immediately'
+            }
           </div>
         </CardFooter>
       </Card>
@@ -177,11 +215,27 @@ export function SectionCards() {
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            {stats.savingsRate >= 20 ? 'Excellent savings progress' : stats.savingsRate >= 10 ? 'Good savings rate' : 'Consider saving more'} 
-            {stats.savingsRate >= 20 ? <IconTrendingUp className="size-4" /> : <IconTrendingDown className="size-4" />}
+            {savingsGrowth > 20 
+              ? 'Outstanding savings improvement'
+              : savingsGrowth > 0 
+                ? 'Savings rate improved'
+                : savingsGrowth > -20
+                  ? 'Savings rate declined'
+                  : 'Significant savings decline'
+            } 
+            {savingsGrowth >= 0 ? <IconTrendingUp className="size-4" /> : <IconTrendingDown className="size-4" />}
           </div>
           <div className="text-muted-foreground">
-            {stats.savingsRate >= 20 ? 'Above recommended 20%' : stats.savingsRate >= 10 ? 'Target 20% savings rate' : 'Recommended: 20%+'}
+            {stats.savingsRate >= 30 
+              ? 'Exceptional financial discipline' 
+              : stats.savingsRate >= 20 
+                ? 'Meeting financial goals'
+                : stats.savingsRate >= 10
+                  ? 'On track, aim for 20%+'
+                  : stats.savingsRate >= 0
+                    ? 'Focus on reducing expenses'
+                    : 'Urgent: spending exceeds income'
+            }
           </div>
         </CardFooter>
       </Card>

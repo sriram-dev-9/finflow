@@ -24,6 +24,11 @@ export interface DashboardStats {
   savingsRate: number
   monthlyIncome: number
   monthlyExpenses: number
+  // Growth percentages compared to previous month
+  netWorthGrowth: number
+  incomeGrowth: number
+  expenseGrowth: number
+  savingsGrowth: number
 }
 
 export interface ChartDataPoint {

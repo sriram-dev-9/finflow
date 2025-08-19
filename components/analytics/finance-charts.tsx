@@ -68,8 +68,14 @@ const months = ["Jan","Feb","Mar","Apr","May","Jun"]
 // Income / Expenses daily-ish sample for line + area (synthetic)
 /* --------------------------------- Configs -------------------------------- */
 const incomeExpenseConfig = {
-  income: { label: "Income", color: "#22c55e" },
-  expenses: { label: "Expenses", color: "#ef4444" },
+  income: {
+    label: "Income",
+    color: "#22c55e",
+  },
+  expenses: {
+    label: "Expenses",
+    color: "#ef4444",
+  },
 } satisfies ChartConfig
 
 const netWorthAreaConfig = {
@@ -148,18 +154,21 @@ export function IncomeExpensesLine({ data }: { data?: Array<{ date: string; inco
                 tickMargin={8} 
                 tickFormatter={(v) => new Date(v).toLocaleDateString(undefined,{month:'short'})} 
               />
-              <ChartTooltip content={<ChartTooltipContent className="w-[140px]" nameKey="views" />} />
+              <ChartTooltip 
+                cursor={false}
+                content={<ChartTooltipContent indicator="dashed" />} 
+              />
               <Line 
                 dataKey="expenses" 
                 type="monotone" 
-                stroke="#ef4444" 
+                stroke="var(--color-expenses)" 
                 strokeWidth={2} 
                 dot={false} 
               />
               <Line 
                 dataKey="income" 
                 type="monotone" 
-                stroke="#22c55e" 
+                stroke="var(--color-income)" 
                 strokeWidth={2} 
                 dot={false} 
               />
