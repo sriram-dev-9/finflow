@@ -1,10 +1,20 @@
+"use client"
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { IconCreditCard } from "@tabler/icons-react"
+import { useCurrency } from "@/lib/currency-context"
+import { toast } from "sonner"
 
 export default function SettingsPage() {
+  const { currency, setCurrency } = useCurrency()
+
+  const handleSaveCurrency = () => {
+    toast.success("Currency setting saved successfully!")
+  }
+
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
       <div className="px-4 lg:px-6">
@@ -30,7 +40,7 @@ export default function SettingsPage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="currency">Default Currency</Label>
-              <Select defaultValue="usd">
+              <Select value={currency} onValueChange={setCurrency}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -45,7 +55,7 @@ export default function SettingsPage() {
                 </SelectContent>
               </Select>
             </div>
-            <Button>Save Currency Setting</Button>
+            <Button onClick={handleSaveCurrency}>Save Currency Setting</Button>
           </CardContent>
         </Card>
       </div>

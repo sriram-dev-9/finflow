@@ -2,13 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/lib/auth';
+import { useCurrency } from '@/lib/currency-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { IconPlus, IconCreditCard, IconWallet, IconPigMoney, IconEdit, IconTrash } from '@tabler/icons-react';
+import { IconPlus, IconCreditCard, IconWallet, IconPigMoney, IconEdit, IconTrash, IconTrendingUp } from '@tabler/icons-react';
 import { toast } from 'sonner';
 
 interface Account {
@@ -24,6 +26,8 @@ export default function AccountsPage() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const { user } = useAuth();
+  const { formatCurrency } = useCurrency();
   const [newAccount, setNewAccount] = useState({
     name: '',
     type: 'checking' as Account['type'],
@@ -31,8 +35,10 @@ export default function AccountsPage() {
   });
 
   useEffect(() => {
-    fetchAccounts();
-  }, []);
+    if (user) {
+      fetchAccounts();
+    }
+  }, [user]);
 
   const fetchAccounts = async () => {
     try {
@@ -82,7 +88,7 @@ export default function AccountsPage() {
       case 'credit':
         return <IconCreditCard className="h-5 w-5" />;
       case 'investment':
-        return <IconPlus className="h-5 w-5" />;
+        return <IconTrendingUp className="h-5 w-5" />;
       default:
         return <IconWallet className="h-5 w-5" />;
     }
@@ -101,13 +107,6 @@ export default function AccountsPage() {
       default:
         return 'bg-gray-100 text-gray-800';
     }
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
   };
 
   if (loading) {

@@ -3,6 +3,8 @@ CREATE TABLE public.accounts (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   name text NOT NULL,
+  type text DEFAULT 'checking' CHECK (type IN ('checking', 'savings', 'credit', 'investment')),
+  balance numeric DEFAULT 0,
   created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 

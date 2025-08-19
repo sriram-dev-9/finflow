@@ -16,13 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { getDashboardStats } from "@/lib/database"
 import { DashboardStats } from "@/lib/types"
 import { FinancialInsight } from "@/lib/ai-insights"
-
-function formatCurrency(amount: number) {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(amount)
-}
+import { useCurrency } from "@/lib/currency-context"
 
 function formatPercentage(value: number) {
   return `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`
@@ -33,6 +27,7 @@ export function SectionCards() {
   const [insights, setInsights] = useState<FinancialInsight[] | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const { formatCurrency } = useCurrency()
 
   useEffect(() => {
     async function fetchData() {

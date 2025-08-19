@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { CurrencyProvider } from "@/lib/currency-context";
 import { AuthForm } from "@/components/auth-form";
 import { AuthHandler } from "@/components/auth-handler";
 import { Toaster } from "@/components/ui/sonner";
@@ -81,8 +82,10 @@ export default function RootLayout({
       >
         <ThemeProvider>
           <AuthProvider>
-            <AppContent>{children}</AppContent>
-            <Toaster />
+            <CurrencyProvider>
+              <AppContent>{children}</AppContent>
+              <Toaster />
+            </CurrencyProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>
