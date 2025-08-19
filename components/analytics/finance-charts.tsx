@@ -68,44 +68,44 @@ const months = ["Jan","Feb","Mar","Apr","May","Jun"]
 // Income / Expenses daily-ish sample for line + area (synthetic)
 /* --------------------------------- Configs -------------------------------- */
 const incomeExpenseConfig = {
-  income: { label: "Income", color: "hsl(var(--chart-2))" },
-  expenses: { label: "Expenses", color: "hsl(var(--chart-1))" },
+  income: { label: "Income", color: "#22c55e" },
+  expenses: { label: "Expenses", color: "#ef4444" },
 } satisfies ChartConfig
 
 const netWorthAreaConfig = {
   net: { label: "Net Savings" },
-  income: { label: "Income", color: "var(--chart-2)" },
-  expenses: { label: "Expenses", color: "var(--chart-1)" },
+  income: { label: "Income", color: "#22c55e" },
+  expenses: { label: "Expenses", color: "#ef4444" },
 } satisfies ChartConfig
 
 const categoryConfig = {
   amount: { label: "Amount" },
-  Housing: { label: "Housing", color: "var(--chart-1)" },
-  Food: { label: "Food", color: "var(--chart-2)" },
-  Transportation: { label: "Transport", color: "var(--chart-3)" },
-  "Bills & Utilities": { label: "Bills", color: "var(--chart-4)" },
-  Insurance: { label: "Insurance", color: "var(--chart-5)" },
-  Entertainment: { label: "Fun", color: "var(--chart-2)" },
-  Debt: { label: "Debt", color: "var(--chart-3)" },
+  Housing: { label: "Housing", color: "#3b82f6" },
+  Food: { label: "Food", color: "#ef4444" },
+  Transportation: { label: "Transport", color: "#f59e0b" },
+  "Bills & Utilities": { label: "Bills", color: "#8b5cf6" },
+  Insurance: { label: "Insurance", color: "#06b6d4" },
+  Entertainment: { label: "Fun", color: "#f97316" },
+  Debt: { label: "Debt", color: "#ec4899" },
 } satisfies ChartConfig
 
 const budgetActualConfig = {
-  budget: { label: "Budget", color: "var(--chart-3)" },
-  actual: { label: "Actual", color: "var(--chart-2)" },
+  budget: { label: "Budget", color: "#64748b" },
+  actual: { label: "Actual", color: "#22c55e" },
 } satisfies ChartConfig
 
 const paymentConfig = {
   value: { label: "Transactions" },
-  bank: { label: "Bank", color: "var(--chart-1)" },
-  credit: { label: "Credit", color: "var(--chart-2)" },
-  debit: { label: "Debit", color: "var(--chart-3)" },
-  autopay: { label: "AutoPay", color: "var(--chart-4)" },
-  other: { label: "Other", color: "var(--chart-5)" },
+  bank: { label: "Bank", color: "#3b82f6" },
+  credit: { label: "Credit", color: "#ef4444" },
+  debit: { label: "Debit", color: "#22c55e" },
+  autopay: { label: "AutoPay", color: "#f59e0b" },
+  other: { label: "Other", color: "#8b5cf6" },
 } satisfies ChartConfig
 
 const weeklyStackConfig = {
-  savings: { label: "Savings", color: "var(--chart-2)" },
-  discretionary: { label: "Discretionary", color: "var(--chart-1)" },
+  savings: { label: "Savings", color: "#22c55e" },
+  discretionary: { label: "Discretionary", color: "#3b82f6" },
 } satisfies ChartConfig
 
 /* ------------------------------- Helper Utils ----------------------------- */
@@ -122,6 +122,10 @@ export function IncomeExpensesLine({ data }: { data?: Array<{ date: string; inco
   const chartData = contextData?.monthlyData?.length ? contextData.monthlyData : 
                    (data && data.length > 0 ? data : [])
 
+  // Debug logging
+  console.log('IncomeExpensesLine - chartData:', chartData)
+  console.log('IncomeExpensesLine - contextData:', contextData)
+
   return (
     <Card className="py-2">
       <CardHeader className="pb-2">
@@ -137,10 +141,28 @@ export function IncomeExpensesLine({ data }: { data?: Array<{ date: string; inco
           <ChartContainer config={incomeExpenseConfig} className="h-[220px] w-full">
             <LineChart accessibilityLayer data={chartData} margin={{ left: 8, right: 8 }}>
               <CartesianGrid vertical={false} />
-              <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(v) => new Date(v).toLocaleDateString(undefined,{month:'short'})} />
+              <XAxis 
+                dataKey="date" 
+                tickLine={false} 
+                axisLine={false} 
+                tickMargin={8} 
+                tickFormatter={(v) => new Date(v).toLocaleDateString(undefined,{month:'short'})} 
+              />
               <ChartTooltip content={<ChartTooltipContent className="w-[140px]" nameKey="views" />} />
-              <Line dataKey="expenses" type="monotone" stroke="var(--color-expenses)" strokeWidth={2} dot={false} />
-              <Line dataKey="income" type="monotone" stroke="var(--color-income)" strokeWidth={2} dot={false} />
+              <Line 
+                dataKey="expenses" 
+                type="monotone" 
+                stroke="#ef4444" 
+                strokeWidth={2} 
+                dot={false} 
+              />
+              <Line 
+                dataKey="income" 
+                type="monotone" 
+                stroke="#22c55e" 
+                strokeWidth={2} 
+                dot={false} 
+              />
             </LineChart>
           </ChartContainer>
         )}
@@ -174,14 +196,14 @@ export function NetSavingsArea() {
             <AreaChart data={areaData} margin={{ left: 8, right: 8 }}>
               <defs>
                 <linearGradient id="fillNet" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--color-income)" stopOpacity={0.75} />
-                  <stop offset="95%" stopColor="var(--color-income)" stopOpacity={0.05} />
+                  <stop offset="5%" stopColor="#22c55e" stopOpacity={0.75} />
+                  <stop offset="95%" stopColor="#22c55e" stopOpacity={0.05} />
                 </linearGradient>
               </defs>
               <CartesianGrid vertical={false} />
               <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(v)=> new Date(v).toLocaleDateString(undefined,{month:'short'})} />
               <ChartTooltip content={<ChartTooltipContent className="w-[150px]" />} />
-              <Area dataKey="net" type="natural" stroke="var(--color-income)" fill="url(#fillNet)" />
+              <Area dataKey="net" type="natural" stroke="#22c55e" fill="url(#fillNet)" />
             </AreaChart>
           </ChartContainer>
         )}
