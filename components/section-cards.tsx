@@ -15,6 +15,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { getDashboardStats } from "@/lib/database"
 import { DashboardStats } from "@/lib/types"
+import { FinancialInsight } from "@/lib/ai-insights"
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat('en-US', {
@@ -29,24 +30,45 @@ function formatPercentage(value: number) {
 
 export function SectionCards() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [insights, setInsights] = useState<FinancialInsight[] | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    async function fetchStats() {
+    async function fetchData() {
       try {
         setLoading(true)
-        const data = await getDashboardStats()
-        setStats(data)
+        
+        // First get the working stats
+        const statsData = await getDashboardStats()
+        setStats(statsData)
+        
+        // Then try to get AI insights using the same stats
+        try {
+          const response = await fetch('/api/insights', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(statsData)
+          })
+          if (response.ok) {
+            const data = await response.json()
+            setInsights(data.insights)
+          }
+        } catch (aiError) {
+          console.log('AI insights failed, using fallback descriptions')
+        }
+        
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch dashboard stats')
-        console.error('Error fetching dashboard stats:', err)
+        setError(err instanceof Error ? err.message : 'Failed to fetch dashboard data')
+        console.error('Error fetching dashboard data:', err)
       } finally {
         setLoading(false)
       }
     }
 
-    fetchStats()
+    fetchData()
   }, [])
 
   if (loading) {
@@ -88,6 +110,25 @@ export function SectionCards() {
   const expenseGrowth = stats.expenseGrowth
   const savingsGrowth = stats.savingsGrowth
 
+  // Get AI insights or use fallback descriptions
+  const getCardContent = (cardIndex: number, fallbackTitle: string, fallbackDesc: string) => {
+    if (insights && insights[cardIndex]) {
+      const insight = insights[cardIndex]
+      return {
+        title: insight.title,
+        description: insight.description,
+        advice: insight.advice,
+        trend: insight.trend
+      }
+    }
+    return {
+      title: fallbackTitle,
+      description: fallbackDesc,
+      advice: fallbackTitle,
+      trend: 'neutral' as const
+    }
+  }
+
   return (
     <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
       <Card className="@container/card">
@@ -105,23 +146,14 @@ export function SectionCards() {
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            {netWorthGrowth > 5 
-              ? 'Excellent financial growth' 
-              : netWorthGrowth > 0 
-                ? 'Growing steadily this month'
-                : netWorthGrowth > -5
-                  ? 'Slight decline this month'
-                  : 'Significant decline this month'
-            } 
+            {getCardContent(0, 
+              netWorthGrowth > 5 ? 'Excellent financial growth' : netWorthGrowth > 0 ? 'Growing steadily this month' : 'Declined this month',
+              netWorthGrowth > 5 ? 'Outstanding progress' : netWorthGrowth > 0 ? 'Building wealth' : 'Focus needed'
+            ).title}
             {netWorthGrowth >= 0 ? <IconTrendingUp className="size-4" /> : <IconTrendingDown className="size-4" />}
           </div>
           <div className="text-muted-foreground">
-            {stats.netWorth > 10000 
-              ? 'Strong financial foundation' 
-              : stats.netWorth > 0 
-                ? 'Building wealth progressively'
-                : 'Focus on increasing income'
-            }
+            {getCardContent(0, '', '').description || (stats.netWorth > 10000 ? 'Strong financial foundation' : stats.netWorth > 0 ? 'Building wealth progressively' : 'Focus on increasing income')}
           </div>
         </CardFooter>
       </Card>
@@ -141,25 +173,14 @@ export function SectionCards() {
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            {incomeGrowth > 10 
-              ? 'Outstanding income boost'
-              : incomeGrowth > 0 
-                ? 'Income increased this month'
-                : incomeGrowth > -10
-                  ? 'Income decreased slightly'
-                  : 'Significant income decline'
-            } 
+            {getCardContent(1, 
+              incomeGrowth > 10 ? 'Outstanding income boost' : incomeGrowth > 0 ? 'Income increased this month' : 'Income decreased',
+              incomeGrowth > 10 ? 'Excellent growth' : incomeGrowth > 0 ? 'Good trend' : 'Needs attention'
+            ).title}
             {incomeGrowth >= 0 ? <IconTrendingUp className="size-4" /> : <IconTrendingDown className="size-4" />}
           </div>
           <div className="text-muted-foreground">
-            {stats.monthlyIncome > 5000 
-              ? 'Excellent monthly earnings' 
-              : stats.monthlyIncome > 2000 
-                ? 'Good income stream'
-                : stats.monthlyIncome > 0
-                  ? 'Building income sources'
-                  : 'Need to establish income'
-            }
+            {getCardContent(1, '', '').description || (stats.monthlyIncome > 5000 ? 'Excellent monthly earnings' : stats.monthlyIncome > 2000 ? 'Good income stream' : 'Building income sources')}
           </div>
         </CardFooter>
       </Card>
@@ -179,23 +200,14 @@ export function SectionCards() {
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            {expenseGrowth < -10 
-              ? 'Excellent cost reduction'
-              : expenseGrowth <= 0 
-                ? 'Spending decreased'
-                : expenseGrowth < 10
-                  ? 'Spending increased slightly'
-                  : 'Significant spending increase'
-            } 
+            {getCardContent(2, 
+              expenseGrowth < -10 ? 'Excellent cost reduction' : expenseGrowth <= 0 ? 'Spending decreased' : 'Spending increased',
+              expenseGrowth < -10 ? 'Great control' : expenseGrowth <= 0 ? 'Good discipline' : 'Monitor closely'
+            ).title}
             {expenseGrowth <= 0 ? <IconTrendingDown className="size-4" /> : <IconTrendingUp className="size-4" />}
           </div>
           <div className="text-muted-foreground">
-            {expenseGrowth <= 0 
-              ? 'Great budget discipline' 
-              : expenseGrowth < 15
-                ? 'Monitor spending patterns'
-                : 'Review budget immediately'
-            }
+            {getCardContent(2, '', '').description || (expenseGrowth <= 0 ? 'Great budget discipline' : expenseGrowth < 15 ? 'Monitor spending patterns' : 'Review budget immediately')}
           </div>
         </CardFooter>
       </Card>
@@ -215,27 +227,14 @@ export function SectionCards() {
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            {savingsGrowth > 20 
-              ? 'Outstanding savings improvement'
-              : savingsGrowth > 0 
-                ? 'Savings rate improved'
-                : savingsGrowth > -20
-                  ? 'Savings rate declined'
-                  : 'Significant savings decline'
-            } 
+            {getCardContent(3, 
+              savingsGrowth > 20 ? 'Outstanding savings improvement' : savingsGrowth > 0 ? 'Savings rate improved' : 'Savings declined',
+              savingsGrowth > 20 ? 'Exceptional progress' : savingsGrowth > 0 ? 'Good improvement' : 'Needs focus'
+            ).title}
             {savingsGrowth >= 0 ? <IconTrendingUp className="size-4" /> : <IconTrendingDown className="size-4" />}
           </div>
           <div className="text-muted-foreground">
-            {stats.savingsRate >= 30 
-              ? 'Exceptional financial discipline' 
-              : stats.savingsRate >= 20 
-                ? 'Meeting financial goals'
-                : stats.savingsRate >= 10
-                  ? 'On track, aim for 20%+'
-                  : stats.savingsRate >= 0
-                    ? 'Focus on reducing expenses'
-                    : 'Urgent: spending exceeds income'
-            }
+            {getCardContent(3, '', '').description || (stats.savingsRate >= 30 ? 'Exceptional financial discipline' : stats.savingsRate >= 20 ? 'Meeting financial goals' : stats.savingsRate >= 10 ? 'On track, aim for 20%+' : 'Focus on reducing expenses')}
           </div>
         </CardFooter>
       </Card>

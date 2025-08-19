@@ -27,9 +27,13 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { useAuth } from "@/lib/auth"
 
-const navData = {
+const data = {
+  user: {
+    name: "FinFlow User",
+    email: "user@finflow.com",
+    avatar: "/avatars/user.jpg",
+  },
   navMain: [
     { title: "Dashboard", url: "/dashboard", icon: IconDashboard },
     { title: "Transactions", url: "/transactions", icon: IconCreditCard },
@@ -40,24 +44,11 @@ const navData = {
   ],
   navSecondary: [
     { title: "Settings", url: "/settings", icon: IconSettings },
-    { title: "Setup", url: "/setup", icon: IconSearch },
+    { title: "Search", url: "#", icon: IconSearch },
   ],
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { user } = useAuth()
-
-  // Prepare user data for NavUser component
-  const userData = user ? {
-    name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
-    email: user.email || '',
-    avatar: user.user_metadata?.avatar_url || '',
-  } : {
-    name: 'Guest',
-    email: '',
-    avatar: '',
-  }
-
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -76,11 +67,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={navData.navMain} />
-        <NavSecondary items={navData.navSecondary} className="mt-auto" />
+  <NavMain items={data.navMain} />
+  <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={userData} />
+        <NavUser user={data.user} />
       </SidebarFooter>
     </Sidebar>
   )
